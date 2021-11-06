@@ -119,3 +119,16 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         self.loadings_ = loadings
         self.communalities_ = new_communalities
         self.specific_variances_ = 1 - new_communalities
+
+    def get_covariance(self):
+        """
+        Returns the reproduced (model) covariance matrix.
+
+        Returns
+        -------
+        cov : array_like, shape (n_features, n_features)
+            The model covariance matrix
+        """
+        return np.dot(self.loadings_, self.loadings_.T) + np.diag(
+            self.specific_variances_
+        )
