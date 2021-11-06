@@ -1,5 +1,6 @@
 import factor_analyzer
 import numpy as np
+import pandas as pd
 from sklearn.datasets import load_iris
 from sklearn.decomposition import FactorAnalysis as FA
 
@@ -34,3 +35,12 @@ def test_iris3():
     )
     fa_fa.fit(X)
     print(fa_fa.loadings_)
+
+
+def test_book_example():
+    data = pd.read_excel(r".\data\application_example_backhaus_2021.xlsx")
+    assert data.shape == (29, 5)
+
+    fa = FactorAnalysis(n_factors=2).fit(data)
+    print(fa.corr_)
+    print(fa.loadings_)
