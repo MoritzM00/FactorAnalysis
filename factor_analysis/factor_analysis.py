@@ -20,8 +20,10 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         The number of factors.
     """
 
-    def __init__(self, n_factors):
+    def __init__(self, n_factors, method="paf", max_iter=50):
         self.n_factors = n_factors
+        self.method = method
+        self.max_iter = max_iter
 
     def fit(self, X, y=None):
         """
@@ -49,30 +51,17 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         corr = np.dot(Z.T, Z) / (self.n_samples_ - 1)
         self.corr_ = corr.copy()
 
-        # using squared multiple correlations as initial estimate
-        # for communalities
-        squared_multiple_corr = smc(corr)
-
-        # replace the diagonal "ones" with the estimated communalities
-        np.fill_diagonal(corr, squared_multiple_corr)
-
-        # perform eigenvalue decomposition on the reduced correlation matrix
-        eigenvalues, eigenvectors = np.linalg.eigh(corr)
-
-        # sort the eigenvectors by eigenvalues from largest to smallest
-        idx = eigenvalues.argsort()[::-1][: self.n_factors]
-        eigenvalues = eigenvalues[idx]
-        eigenvectors = eigenvectors[:, idx]
-
-        loadings = np.dot(eigenvectors, np.diag(np.sqrt(eigenvalues)))
+        if self.method == "paf":
+            self._fit_principal_axis()
+        else:
+            raise ValueError(f"Method {self.method} is not supported.")
 
         if self.n_factors > 1:
             # update loading signs to match column sums
             # this is to ensure that signs align with package factor_analyzer
-            signs = np.sign(loadings.sum(0))
+            signs = np.sign(self.loadings_.sum(0))
             signs[(signs == 0)] = 1
-            loadings = np.dot(loadings, np.diag(signs))
-        self.loadings_ = loadings
+            self.loadings_ = np.dot(self.loadings_, np.diag(signs))
         return self
 
     def transform(self, X):
@@ -90,3 +79,43 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             The transformed samples.
         """
         pass
+
+    def _fit_principal_axis(self):
+        corr = self.corr_.copy()
+        print()
+        print(corr)
+
+        # using squared multiple correlations as initial estimate
+        # for communalities
+        squared_multiple_corr = smc(corr)
+
+        # replace the diagonal "ones" with the estimated communalities
+        np.fill_diagonal(corr, squared_multiple_corr)
+
+        sum_of_communalities = squared_multiple_corr.sum()
+        error = sum_of_communalities
+        error_threshold = 0.001
+        i = 0
+        while i < self.max_iter and error > error_threshold:
+            # perform eigenvalue decomposition on the reduced correlation matrix
+            eigenvalues, eigenvectors = np.linalg.eigh(corr)
+
+            # sort the eigenvectors by eigenvalues from largest to smallest
+            idx = eigenvalues.argsort()[::-1][: self.n_factors]
+            eigenvalues = eigenvalues[idx]
+            eigenvectors = eigenvectors[:, idx]
+
+            # update the loadings and calculate reproduced correlation matrix
+            loadings = np.dot(eigenvectors, np.diag(np.sqrt(eigenvalues)))
+            corr = np.dot(loadings, loadings.T)
+
+            # the new estimate for the communalities is the diagonal
+            # of the reproduced correlation matrix
+            new_communalities = np.diag(corr)
+
+            error = np.abs(new_communalities.sum() - sum_of_communalities)
+            i += 1
+
+        self.loadings_ = loadings
+        self.communalities_ = new_communalities
+        self.specific_variances_ = 1 - new_communalities
