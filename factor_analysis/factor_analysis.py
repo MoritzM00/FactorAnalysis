@@ -3,6 +3,7 @@ Exploratory Factor Analysis.
 """
 
 import numpy as np
+import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.utils.validation import check_array
@@ -98,8 +99,6 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
     def _fit_principal_axis(self):
         corr = self.corr_.copy()
-        print()
-        print(corr)
 
         # using squared multiple correlations as initial estimate
         # for communalities
@@ -111,7 +110,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         sum_of_communalities = squared_multiple_corr.sum()
         error = sum_of_communalities
         error_threshold = 0.001
-        for i in range(self.max_iter):
+        for _ in range(self.max_iter):
             if error < error_threshold:
                 break
             # perform eigenvalue decomposition on the reduced correlation matrix
@@ -153,3 +152,37 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         return np.dot(self.loadings_, self.loadings_.T) + np.diag(
             self.specific_variances_
         )
+
+    def summary(self, verbose=False):
+        """
+        Returns a dataframe that contains the loading matrix, the communalities
+        and the specific variances.
+
+        Returns
+        -------
+        df : DataFrame
+            The summary dataframe.
+        """
+        column_names = [f"Factor {i}" for i in range(1, self.n_factors + 1)] + [
+            "Communalities",
+            "Specific variances",
+        ]
+        idx = [f"X{i}" for i in range(1, self.n_features_ + 1)]
+        df = pd.DataFrame(
+            data=np.concatenate(
+                (
+                    self.loadings_,
+                    self.communalities_.reshape(-1, 1),
+                    self.specific_variances_.reshape(-1, 1),
+                ),
+                axis=1,
+            ),
+            columns=column_names,
+            index=idx,
+        )
+        if verbose:
+            print(f"Number of samples: {self.n_samples_}")
+            print(f"Number of features: {self.n_features_} \n")
+            print("Summary of estimated paramters: \n")
+            print(df)
+        return df
