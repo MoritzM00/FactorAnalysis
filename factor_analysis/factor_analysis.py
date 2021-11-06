@@ -5,6 +5,7 @@ Exploratory Factor Analysis.
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.validation import check_array
+from utils import smc, standardize
 
 
 class FactorAnalysis(BaseEstimator, TransformerMixin):
@@ -38,27 +39,24 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         self : FactorAnalysis
             The fitted model.
         """
-        X = check_array(X)
+        X = check_array(X, copy=True)
         self.n_samples_, self.n_features_ = X.shape
 
         # standardize data
-        self.mean_ = np.mean(X, axis=0)
-        self.std_ = X.std(axis=0)
-
-        Z = (X - self.mean_) / self.std_
+        Z, self.mean_, self.std_ = standardize(X)
 
         # calculate initial correlation matrix
         corr = np.dot(Z.T, Z) / (self.n_samples_ - 1)
         self.corr_ = corr.copy()
 
-        # initial estimates for communalities
-        inv_corr = np.linalg.inv(corr)
-        squared_multiple_corr = 1 - 1 / np.diagonal(inv_corr)
+        # using squared multiple correlations as initial estimate
+        # for communalities
+        squared_multiple_corr = smc(corr)
 
         # replace the diagonal "ones" with the estimated communalities
         np.fill_diagonal(corr, squared_multiple_corr)
 
-        # perform PCA on reduced correlation matrix
+        # perform eigenvalue decomposition on the reduced correlation matrix
         eigenvalues, eigenvectors = np.linalg.eigh(corr)
 
         # sort the eigenvectors by eigenvalues from largest to smallest
