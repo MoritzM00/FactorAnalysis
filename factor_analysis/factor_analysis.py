@@ -4,6 +4,7 @@ Exploratory Factor Analysis.
 
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.utils.validation import check_array
 from utils import smc, standardize
 
@@ -18,6 +19,21 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
     ----------
     n_factors : int
         The number of factors.
+    method : str, default='paf'
+        The fitting method, currently only (iterated) principal axis factoring (PAF)
+        is supported.
+    max_iter : int, default=50
+        The maximum number of iterations. Set it to 1 if you do not want
+        the iterated PAF.
+    loadings_ : array_like, shape (n_features, n_factors)
+        The factor loading matrix.
+    communalities_ : array_like, shape (n_features,)
+        The communalities (or common variance) of the variables. This is the part
+        of the variance of the variables that can be explained by the factors.
+    specific_variances_ : array_like, shape (n_features,)
+        The specific variances for each variable. It is the part of the variance,
+        that cannot be explained by the factors and is unique to each variable.
+        Therefore it is also known as the 'uniqueness'.
     """
 
     def __init__(self, n_factors, method="paf", max_iter=50):
@@ -95,8 +111,9 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         sum_of_communalities = squared_multiple_corr.sum()
         error = sum_of_communalities
         error_threshold = 0.001
-        i = 0
-        while i < self.max_iter and error > error_threshold:
+        for i in range(self.max_iter):
+            if error < error_threshold:
+                break
             # perform eigenvalue decomposition on the reduced correlation matrix
             eigenvalues, eigenvectors = np.linalg.eigh(corr)
 
@@ -114,7 +131,11 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             new_communalities = np.diag(corr)
 
             error = np.abs(new_communalities.sum() - sum_of_communalities)
-            i += 1
+        else:
+            raise ConvergenceWarning(
+                "Iterated principal axis factoring did not converge. "
+                "Consider increasing the `max_iter` parameter of the model."
+            )
 
         self.loadings_ = loadings
         self.communalities_ = new_communalities
