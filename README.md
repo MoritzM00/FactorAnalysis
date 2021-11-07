@@ -2,8 +2,7 @@
 
 ## Overview
 
-This project implements the exploratory factor analysis using maximum likelihood estimation,
-as well as using principal axes factoring.
+This project implements factor analysis using the iterated principal axis factoring (PAF) method.
 
 ## Installation
 
