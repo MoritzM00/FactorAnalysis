@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from sklearn.datasets import load_iris
 
@@ -7,8 +8,9 @@ X = load_iris().data
 
 
 def test_iris():
-    fa = FactorAnalysis(n_factors=2)
+    fa = FactorAnalysis(n_factors=2, method="paf", max_iter=50)
     fa.fit(X)
+    print(fa)
 
     # fa_fa = factor_analyzer.FactorAnalyzer(
     #    n_factors=2, rotation=None, method="principal", svd_method="lapack"
@@ -19,6 +21,7 @@ def test_iris():
 
     # print(fa.loadings_ - fa_fa.loadings_)
     print(fa.loadings_)
+    fa.summary()
 
 
 def test_book_example():
@@ -26,8 +29,7 @@ def test_book_example():
     assert data.shape == (29, 5)
 
     fa = FactorAnalysis(n_factors=2).fit(data)
-    print(fa.corr_)
-    print(fa.loadings_)
+    fa.summary(verbose=True)
 
 
 def test_women_dataset():
@@ -38,3 +40,21 @@ def test_women_dataset():
     X = df.to_numpy()
     fa = FactorAnalysis(n_factors=4).fit(X)
     print(fa.loadings_)
+
+
+def test_corr_mtx():
+    R = np.array(
+        [
+            [1, 0.712, 0.961, 0.109, 0.044],
+            [0.712, 1, 0.704, 0.138, 0.067],
+            [0.961, 0.704, 1, 0.078, 0.024],
+            [0.109, 0.138, 0.078, 1, 0.983],
+            [0.044, 0.067, 0.024, 0.983, 1],
+        ]
+    )
+    feature_names = ["Milky", "Melting", "Artificial", "Fruity", "Refreshing"]
+    fa = FactorAnalysis(
+        n_factors=2, is_corr_mtx=True, max_iter=50, feature_names=feature_names
+    )
+    fa.fit(R)
+    fa.summary(verbose=True)
