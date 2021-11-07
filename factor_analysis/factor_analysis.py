@@ -225,11 +225,9 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             print("Summary of estimated paramters: \n")
             print(df, "\n")
             print(var_df)
-            # print(
-            #    f"\nCumulative variance explained: {self.cum_var_explained_ * 100:.2f}%"
-            # )
             print(
-                f"Iterations needed until convergence: {self.iterations_ if self.converged_ else 'PAF did not converge'}"
+                f"Iterations needed until convergence: "
+                f"{self.iterations_ if self.converged_ else 'PAF did not converge'}"
             )
             print(f"Absolute difference (R - R_hat): {diff:.4f}")
         return df
