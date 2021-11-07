@@ -182,11 +182,15 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         df : DataFrame
             The summary dataframe.
         """
-        column_names = [f"Factor {i}" for i in range(1, self.n_factors + 1)] + [
+        factors = [f"Factor {i}" for i in range(1, self.n_factors + 1)]
+        column_names = factors + [
             "Communalities",
             "Specific variances",
         ]
-        idx = [f"X{i}" for i in range(1, self.n_features_ + 1)]
+        if self.features_names is not None:
+            idx = self.features_names.copy()
+        else:
+            idx = [f"X{i}" for i in range(1, self.n_features_ + 1)]
         df = pd.DataFrame(
             data=np.concatenate(
                 (
@@ -199,9 +203,23 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             columns=column_names,
             index=idx,
         )
+
+        var_df = pd.DataFrame(
+            self.var_explained_.reshape(-1, 1),
+            index=factors,
+            columns=["Proportion of variance explained"],
+        )
+        # calculate difference between correlation matrix and reproduced corr mtx
+        diff = np.sum(np.abs(self.corr_ - self.get_covariance()))
         if verbose:
-            print(f"Number of samples: {self.n_samples_}")
-            print(f"Number of features: {self.n_features_} \n")
             print("Summary of estimated paramters: \n")
-            print(df)
+            print(df, "\n")
+            print(var_df)
+            print(
+                f"\nCumulative variance explained: {self.cum_var_explained_ * 100:.2f}%"
+            )
+            print(
+                f"Absolute difference between reproduced \n"
+                f"and empirical correlation matrix: {diff:.4f}"
+            )
         return df
