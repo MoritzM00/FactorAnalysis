@@ -131,6 +131,9 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             # perform eigenvalue decomposition on the reduced correlation matrix
             eigenvalues, eigenvectors = np.linalg.eigh(corr)
 
+            # numerical trick, copied from factor-analyzer package
+            eigenvalues = np.maximum(eigenvalues, np.finfo(float).eps * 100)
+
             # sort the eigenvectors by eigenvalues from largest to smallest
             idx = eigenvalues.argsort()[::-1][: self.n_factors]
             eigenvalues = eigenvalues[idx]
