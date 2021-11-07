@@ -123,8 +123,9 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         sum_of_communalities = squared_multiple_corr.sum()
         error = sum_of_communalities
         error_threshold = 0.001
-        for _ in range(self.max_iter):
+        for i in range(self.max_iter):
             if error < error_threshold:
+                self.iterations_ = i
                 self.converged_ = True
                 break
             # perform eigenvalue decomposition on the reduced correlation matrix
@@ -146,18 +147,21 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             # update communalities in the correlation matrix
             np.fill_diagonal(corr, new_communalities)
 
-            error = np.abs(new_communalities.sum() - sum_of_communalities)
+            # update error variables
+            new_sum = new_communalities.sum()
+            error = np.abs(new_sum - sum_of_communalities)
+            sum_of_communalities = new_sum
         else:
             self.converged_ = False
 
         self.loadings_ = loadings
-        self.communalities_ = new_communalities
+        self.communalities_ = np.sum(loadings ** 2, axis=1)  # new_communalities
         self.specific_variances_ = 1 - self.communalities_
 
         # proportion of variance explained by each factor
         self.var_explained_ = eigenvalues / np.trace(corr)
         # cumulative variance explained
-        self.cum_var_explained_ = eigenvalues.sum() / self.n_features_
+        self.cum_var_explained_ = eigenvalues / self.n_features_
 
     def get_covariance(self):
         """
@@ -172,10 +176,15 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             self.specific_variances_
         )
 
-    def summary(self, verbose=False):
+    def summary(self, verbose=True):
         """
         Returns a dataframe that contains the loading matrix, the communalities
         and the specific variances.
+
+        Parameters
+        ----------
+        verbose : bool, default=True
+            If true, then print the output.
 
         Returns
         -------
@@ -203,11 +212,12 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             columns=column_names,
             index=idx,
         )
-
         var_df = pd.DataFrame(
-            self.var_explained_.reshape(-1, 1),
-            index=factors,
-            columns=["Proportion of variance explained"],
+            data=np.concatenate(
+                ([self.var_explained_], [self.cum_var_explained_]), axis=0
+            ),
+            index=["Proportion of variance explained", "Cumulative variance"],
+            columns=factors,
         )
         # calculate difference between correlation matrix and reproduced corr mtx
         diff = np.sum(np.abs(self.corr_ - self.get_covariance()))
@@ -215,11 +225,11 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             print("Summary of estimated paramters: \n")
             print(df, "\n")
             print(var_df)
+            # print(
+            #    f"\nCumulative variance explained: {self.cum_var_explained_ * 100:.2f}%"
+            # )
             print(
-                f"\nCumulative variance explained: {self.cum_var_explained_ * 100:.2f}%"
+                f"Iterations needed until convergence: {self.iterations_ if self.converged_ else 'PAF did not converge'}"
             )
-            print(
-                f"Absolute difference between reproduced \n"
-                f"and empirical correlation matrix: {diff:.4f}"
-            )
+            print(f"Absolute difference (R - R_hat): {diff:.4f}")
         return df
