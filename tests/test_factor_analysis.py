@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 from sklearn.datasets import load_iris
 
 from factor_analysis import FactorAnalysis
@@ -8,9 +9,8 @@ X = load_iris().data
 
 
 def test_iris():
-    fa = FactorAnalysis(n_factors=2, method="paf", max_iter=50)
+    fa = FactorAnalysis(n_factors=3, method="paf", max_iter=50)
     fa.fit(X)
-    print(fa)
 
     # fa_fa = factor_analyzer.FactorAnalyzer(
     #    n_factors=2, rotation=None, method="principal", svd_method="lapack"
@@ -20,8 +20,7 @@ def test_iris():
     # print(fa_fa.loadings_)
 
     # print(fa.loadings_ - fa_fa.loadings_)
-    print(fa.loadings_)
-    fa.summary()
+    fa.summary(verbose=True)
 
 
 def test_book_example():
@@ -29,7 +28,7 @@ def test_book_example():
     assert data.shape == (29, 5)
 
     fa = FactorAnalysis(n_factors=2).fit(data)
-    fa.summary(verbose=True)
+    fa.summary()
 
 
 def test_women_dataset():
@@ -54,7 +53,19 @@ def test_corr_mtx():
     )
     feature_names = ["Milky", "Melting", "Artificial", "Fruity", "Refreshing"]
     fa = FactorAnalysis(
-        n_factors=2, is_corr_mtx=True, max_iter=50, feature_names=feature_names
+        n_factors=3, is_corr_mtx=True, max_iter=50, feature_names=feature_names
     )
     fa.fit(R)
-    fa.summary(verbose=True)
+    fa.summary()
+
+
+@pytest.mark.parametrize("n_factors", [1, 2, 3])
+def test_coastal_waves(n_factors):
+    df = pd.read_csv(r".\data\coastal_waves_data.csv", sep=",")
+    df.replace(-99.90, np.nan, inplace=True)
+    df.drop("Date/Time", axis=1, inplace=True)
+    df.dropna(inplace=True)
+    df.reset_index(drop=True, inplace=True)
+
+    fa = FactorAnalysis(n_factors=n_factors, feature_names=df.columns).fit(df)
+    fa.summary()
