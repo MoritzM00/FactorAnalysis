@@ -5,7 +5,6 @@ Exploratory Factor Analysis.
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.exceptions import ConvergenceWarning
 from sklearn.utils.validation import check_array
 from utils import smc, standardize
 
@@ -37,10 +36,19 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         Therefore it is also known as the 'uniqueness'.
     """
 
-    def __init__(self, n_factors, method="paf", max_iter=50):
+    def __init__(
+        self,
+        n_factors,
+        method="paf",
+        max_iter=50,
+        is_corr_mtx=False,
+        feature_names=None,
+    ):
         self.n_factors = n_factors
         self.method = method
         self.max_iter = max_iter
+        self.is_corr_mtx = is_corr_mtx
+        self.features_names = feature_names
 
     def fit(self, X, y=None):
         """
@@ -59,14 +67,19 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             The fitted model.
         """
         X = check_array(X, copy=True)
-        self.n_samples_, self.n_features_ = X.shape
 
-        # standardize data
-        Z, self.mean_, self.std_ = standardize(X)
+        if self.is_corr_mtx:
+            self.corr_ = X.copy()
+            self.n_features_ = X.shape[0]
+        else:
+            self.n_samples_, self.n_features_ = X.shape
 
-        # calculate initial correlation matrix
-        corr = np.dot(Z.T, Z) / (self.n_samples_ - 1)
-        self.corr_ = corr.copy()
+            # standardize data
+            Z, self.mean_, self.std_ = standardize(X)
+
+            # calculate initial correlation matrix
+            corr = np.dot(Z.T, Z) / (self.n_samples_ - 1)
+            self.corr_ = corr.copy()
 
         if self.method == "paf":
             self._fit_principal_axis()
@@ -112,6 +125,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         error_threshold = 0.001
         for _ in range(self.max_iter):
             if error < error_threshold:
+                self.converged_ = True
                 break
             # perform eigenvalue decomposition on the reduced correlation matrix
             eigenvalues, eigenvectors = np.linalg.eigh(corr)
@@ -121,24 +135,29 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             eigenvalues = eigenvalues[idx]
             eigenvectors = eigenvectors[:, idx]
 
-            # update the loadings and calculate reproduced correlation matrix
+            # update the loadings and calculate reproduced correlation matrix (R_hat)
             loadings = np.dot(eigenvectors, np.diag(np.sqrt(eigenvalues)))
-            corr = np.dot(loadings, loadings.T)
+            R_hat = np.dot(loadings, loadings.T)
 
             # the new estimate for the communalities is the diagonal
             # of the reproduced correlation matrix
-            new_communalities = np.diag(corr)
+            new_communalities = np.diag(R_hat)
+
+            # update communalities in the correlation matrix
+            np.fill_diagonal(corr, new_communalities)
 
             error = np.abs(new_communalities.sum() - sum_of_communalities)
         else:
-            raise ConvergenceWarning(
-                "Iterated principal axis factoring did not converge. "
-                "Consider increasing the `max_iter` parameter of the model."
-            )
+            self.converged_ = False
 
         self.loadings_ = loadings
         self.communalities_ = new_communalities
-        self.specific_variances_ = 1 - new_communalities
+        self.specific_variances_ = 1 - self.communalities_
+
+        # proportion of variance explained by each factor
+        self.var_explained_ = eigenvalues / np.trace(corr)
+        # cumulative variance explained
+        self.cum_var_explained_ = eigenvalues.sum() / self.n_features_
 
     def get_covariance(self):
         """
