@@ -239,7 +239,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         # calculate difference between correlation matrix and reproduced corr mtx
         diff = np.sum(np.abs(self.corr_ - self.get_covariance()))
         if verbose:
-            print("Summary of estimated paramters: \n")
+            print("Summary of estimated parameters: \n")
             print(df, "\n")
             print(var_df)
             print(
@@ -248,3 +248,47 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             )
             print(f"Absolute difference (R - R_hat): {diff:.4f}")
         return df
+
+    @staticmethod
+    def calculate_kmo(X):
+        """
+        Calculates the KMO score for each variable and the overall KMO score.
+
+        TODO: more explanation
+
+        Parameters
+        ----------
+        X : array_like, shape (n_samples, n_features)
+            The data on which the score is calculated.
+
+        Returns
+        -------
+        (ndarray, float)
+            The KMO score for each variable and the overall KMO score.
+        """
+        return factanal.calculate_kmo(X)
+
+    @staticmethod
+    def calculate_bartlett_sphericity(X):
+        """
+        Calculates the Bartlett Sphericity hypothesis test.
+
+        H0: The variables in the sample are uncorrelated.
+        H1: The variables in the sample are correlated.
+
+        If the variables are uncorrelated, the correlation matrix of
+        the data equals an identity matrix. Therefore, if this test cannot be
+        rejected, the data is likely unsuitable for Factor Analysis.
+
+        Parameters
+        ----------
+        X : array_like, shape (n_samples, n_features)
+            Samples.
+
+        Returns
+        -------
+        chi2_value, p_value : float, flaot
+            The chi2 value and the p-value of the test.
+
+        """
+        return factanal.calculate_bartlett_sphericity(X)
