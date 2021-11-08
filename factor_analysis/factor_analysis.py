@@ -2,6 +2,7 @@
 Exploratory Factor Analysis.
 """
 
+import factor_analyzer as factanal
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -22,6 +23,9 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
     method : str, default='paf'
         The fitting method, currently only (iterated) principal axis factoring (PAF)
         is supported.
+    rotation : str, default=None
+        Sets the factor rotation method. If you do not want to rotate the factors
+        after factor extraction, leave it at default=None.
     max_iter : int, default=50
         The maximum number of iterations. Set it to 1 if you do not want
         the iterated PAF.
@@ -40,12 +44,14 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         self,
         n_factors,
         method="paf",
+        rotation=None,
         max_iter=50,
         is_corr_mtx=False,
         feature_names=None,
     ):
         self.n_factors = n_factors
         self.method = method
+        self.rotation = rotation
         self.max_iter = max_iter
         self.is_corr_mtx = is_corr_mtx
         self.features_names = feature_names
@@ -85,6 +91,11 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             self._fit_principal_axis()
         else:
             raise ValueError(f"Method {self.method} is not supported.")
+
+        if self.rotation is not None:
+            self.loadings_ = factanal.Rotator(method=self.rotation).fit_transform(
+                self.loadings_
+            )
 
         if self.n_factors > 1:
             # update loading signs to match column sums
@@ -194,7 +205,10 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         df : DataFrame
             The summary dataframe.
         """
-        factors = [f"Factor {i}" for i in range(1, self.n_factors + 1)]
+        factors = [
+            f"{'Rotated ' if self.rotation is not None else ''}Factor {i}"
+            for i in range(1, self.n_factors + 1)
+        ]
         column_names = factors + [
             "Communalities",
             "Specific variances",
