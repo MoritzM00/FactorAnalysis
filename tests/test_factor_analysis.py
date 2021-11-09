@@ -1,26 +1,32 @@
+import factor_analyzer
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_allclose
 from sklearn.datasets import load_iris
+from sklearn.utils.estimator_checks import check_estimator
 
 from factor_analysis import FactorAnalysis
 
-X = load_iris().data
+pd.options.display.max_columns = 10
 
 
-def test_iris():
-    fa = FactorAnalysis(n_factors=3, method="paf", max_iter=50)
-    fa.fit(X)
+@pytest.mark.skip
+def test_estimator_check():
+    return check_estimator(FactorAnalysis())
 
-    # fa_fa = factor_analyzer.FactorAnalyzer(
-    #    n_factors=2, rotation=None, method="principal", svd_method="lapack"
-    # )
-    # fa_fa.fit(X)
-    # fa_fa.loadings_ = np.delete(fa_fa.loadings_, obj=[2, 3], axis=1)
-    # print(fa_fa.loadings_)
 
-    # print(fa.loadings_ - fa_fa.loadings_)
-    fa.summary(verbose=True)
+@pytest.mark.parametrize("n_factors", [1, 2, 3, 4])
+@pytest.mark.skip("FactorAnalyzer does not implement iterative paf")
+def test_iris(n_factors):
+    X = load_iris().data
+
+    fa1 = FactorAnalysis(n_factors=n_factors).fit(X)
+    fa2 = factor_analyzer.FactorAnalyzer(
+        n_factors=n_factors, method="uls", svd_method="lapack", rotation=None
+    ).fit(X)
+
+    assert_allclose(fa1.loadings_, fa2.loadings_[:, :n_factors], atol=1e-2)
 
 
 def test_book_example():
@@ -29,19 +35,21 @@ def test_book_example():
 
     fa = FactorAnalysis(n_factors=2).fit(data)
     fa.summary()
+    print(fa.transform(data))
 
 
-def test_women_dataset():
+@pytest.mark.parametrize("rotation", ["varimax", "promax"])
+def test_women_dataset(rotation):
     df = pd.read_csv(r".\data\women_track_records.csv")
 
     # first column is the country, so we drop it
     df.drop(columns=["COUNTRY"], inplace=True)
-    X = df.to_numpy()
-    fa = FactorAnalysis(n_factors=4).fit(X)
-    print(fa.loadings_)
+
+    fa = FactorAnalysis(n_factors=2, rotation=rotation).fit(df)
+    fa.summary()
 
 
-def test_corr_mtx():
+def test_fit_using_corr_mtx():
     R = np.array(
         [
             [1, 0.712, 0.961, 0.109, 0.044],
@@ -53,13 +61,25 @@ def test_corr_mtx():
     )
     feature_names = ["Milky", "Melting", "Artificial", "Fruity", "Refreshing"]
     fa = FactorAnalysis(
-        n_factors=3, is_corr_mtx=True, max_iter=50, feature_names=feature_names
+        n_factors=2, is_corr_mtx=True, max_iter=50, feature_names=feature_names
     )
     fa.fit(R)
+    # these loadings are taken from Backhaus 2021: Multivariate Analysis, p.419
+    loadings = np.array(
+        [
+            [0.943, -0.280],
+            [0.707, -0.162],
+            [0.928, -0.302],
+            [0.389, 0.916],
+            [0.323, 0.936],
+        ]
+    )
+    print()
     fa.summary()
+    assert_allclose(fa.loadings_, loadings, atol=1e-3)
 
 
-@pytest.mark.parametrize("n_factors", [1, 2, 3])
+@pytest.mark.parametrize("n_factors", [1, 2, 3, 4])
 def test_coastal_waves(n_factors):
     df = pd.read_csv(r".\data\coastal_waves_data.csv", sep=",")
     df.replace(-99.90, np.nan, inplace=True)
