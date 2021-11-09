@@ -5,6 +5,7 @@ Exploratory Factor Analysis.
 import factor_analyzer as factanal
 import numpy as np
 import pandas as pd
+from numpy.linalg import LinAlgError
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.validation import check_array, check_is_fitted
 from utils import smc, standardize
@@ -121,7 +122,21 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         X_new : array_like, shape (n_samples, n_factors)
             The transformed samples.
         """
-        pass
+        check_is_fitted(self)
+
+        X = check_array(X, copy=True)
+        Z, *_ = standardize(X)
+
+        try:
+            weights = np.linalg.solve(self.corr_, self.loadings_)
+        except LinAlgError as e:
+            print(e)
+            print("Uses factor scores instead.")
+            weights = self.loadings_
+
+        # factor scores
+        X_new = np.dot(Z, weights)
+        return X_new
 
     def _fit_principal_axis(self):
         corr = self.corr_.copy()
