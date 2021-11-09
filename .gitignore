@@ -16,3 +16,6 @@ __pycache__/
 .coverage
 *.pyc
 .mypy_cache
+
+# ignore data that is too large for now
+examples/data/big_five_personality.csv
