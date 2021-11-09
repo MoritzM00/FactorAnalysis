@@ -186,13 +186,15 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             self.converged_ = False
 
         self.loadings_ = loadings
-        self.communalities_ = np.sum(loadings ** 2, axis=1)  # new_communalities
+
+        # sum of the squared loadings for each variable (each row)
+        # are the final communalities
+        self.communalities_ = np.sum(loadings ** 2, axis=1)
         self.specific_variances_ = 1 - self.communalities_
 
         # proportion of variance explained by each factor
-        self.var_explained_ = eigenvalues / np.trace(corr)
-        # cumulative variance explained
-        self.cum_var_explained_ = eigenvalues / self.n_features_
+        self.eigenvalues_ = eigenvalues
+        self.var_explained_ = eigenvalues / self.n_features_
 
     def get_covariance(self):
         """
@@ -249,25 +251,31 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             columns=column_names,
             index=idx,
         )
-        var_df = pd.DataFrame(
-            data=np.concatenate(
-                ([self.var_explained_], [self.cum_var_explained_]), axis=0
-            ),
-            index=["Proportion of variance explained", "Cumulative variance"],
-            columns=factors,
+        factor_info = pd.DataFrame(
+            data={
+                "Eigenvalue": self.eigenvalues_,
+                "Variance Explained": self.var_explained_,
+                "Cumulative Variance": np.cumsum(self.var_explained_),
+            },
+            index=factors,
         )
         # calculate difference between correlation matrix and reproduced corr mtx
         diff = np.sum(np.abs(self.corr_ - self.get_covariance()))
         if verbose:
+            print(f"Call {self}")
+            print(
+                f"Number of samples: {self.n_samples_ if not self.is_corr_mtx else 'NA'}"
+            )
+            print(f"Number of features: {self.n_features_}")
             print("Summary of estimated parameters: \n")
             print(df, "\n")
-            print(var_df)
+            print(factor_info)
             print(
                 f"Iterations needed until convergence: "
                 f"{self.iterations_ if self.converged_ else 'PAF did not converge'}"
             )
             print(f"Absolute difference (R - R_hat): {diff:.4f}")
-        return df
+        return df, factor_info
 
     @staticmethod
     def calculate_kmo(X):
