@@ -131,7 +131,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             weights = np.linalg.solve(self.corr_, self.loadings_)
         except LinAlgError as e:
             print(e)
-            print("Uses factor scores instead.")
+            print("Uses factor loadings instead.")
             weights = self.loadings_
 
         # factor scores
@@ -211,8 +211,8 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
     def summary(self, verbose=True):
         """
-        Returns a dataframe that contains the loading matrix, the communalities
-        and the specific variances.
+        Returns two dataframes. One that contains the loading matrix, the communalities
+        and the specific variances, and the
 
         Parameters
         ----------
@@ -315,7 +315,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
         Returns
         -------
-        chi2_value, p_value : float, flaot
+        chi2_value, p_value : float, float
             The chi2 value and the p-value of the test.
 
         """
