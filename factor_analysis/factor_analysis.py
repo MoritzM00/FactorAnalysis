@@ -6,7 +6,7 @@ import factor_analyzer as factanal
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.utils.validation import check_array
+from sklearn.utils.validation import check_array, check_is_fitted
 from utils import smc, standardize
 
 
@@ -42,7 +42,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
     def __init__(
         self,
-        n_factors,
+        n_factors=2,
         method="paf",
         rotation=None,
         max_iter=50,
@@ -54,7 +54,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         self.rotation = rotation
         self.max_iter = max_iter
         self.is_corr_mtx = is_corr_mtx
-        self.features_names = feature_names
+        self.feature_names = feature_names
 
     def fit(self, X, y=None):
         """
@@ -73,6 +73,8 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             The fitted model.
         """
         X = check_array(X, copy=True)
+
+        # TODO: input validation
 
         if self.is_corr_mtx:
             self.corr_ = X.copy()
@@ -154,7 +156,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             loadings = np.dot(eigenvectors, np.diag(np.sqrt(eigenvalues)))
             R_hat = np.dot(loadings, loadings.T)
 
-            # the new estimate for the communalities is the diagonal
+            # the new estimate for the communalities are the diagonal elements
             # of the reproduced correlation matrix
             new_communalities = np.diag(R_hat)
 
@@ -203,8 +205,11 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         Returns
         -------
         df : DataFrame
-            The summary dataframe.
+            Summary of loadings, communalities and specific variances
+        factor_info : DataFrame
+            Summary of informations for factors.
         """
+        check_is_fitted(self)
         factors = [
             f"{'Rotated ' if self.rotation is not None else ''}Factor {i}"
             for i in range(1, self.n_factors + 1)
@@ -213,8 +218,8 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             "Communalities",
             "Specific variances",
         ]
-        if self.features_names is not None:
-            idx = self.features_names.copy()
+        if self.feature_names is not None:
+            idx = self.feature_names.copy()
         else:
             idx = [f"X{i}" for i in range(1, self.n_features_ + 1)]
         df = pd.DataFrame(
