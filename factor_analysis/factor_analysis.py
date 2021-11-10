@@ -6,9 +6,13 @@ import factor_analyzer as factanal
 import numpy as np
 import pandas as pd
 from numpy.linalg import LinAlgError
+from sklearn import set_config
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.validation import check_array, check_is_fitted
 from utils import smc, standardize
+
+# print all parameters of the estimator
+set_config(print_changed_only=False)
 
 
 class FactorAnalysis(BaseEstimator, TransformerMixin):
@@ -48,14 +52,12 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         rotation=None,
         max_iter=50,
         is_corr_mtx=False,
-        feature_names=None,
     ):
         self.n_factors = n_factors
         self.method = method
         self.rotation = rotation
         self.max_iter = max_iter
         self.is_corr_mtx = is_corr_mtx
-        self.feature_names = feature_names
 
     def fit(self, X, y=None):
         """
@@ -73,6 +75,10 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         self : FactorAnalysis
             The fitted model.
         """
+        if isinstance(X, pd.DataFrame):
+            # use the columns as feature names
+            self.feature_names_in_ = X.columns
+
         X = check_array(X, copy=True)
 
         # TODO: input validation
@@ -235,8 +241,8 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             "Communalities",
             "Specific variances",
         ]
-        if self.feature_names is not None:
-            idx = self.feature_names.copy()
+        if hasattr(self, "feature_names_in_"):
+            idx = self.feature_names_in_
         else:
             idx = [f"X{i}" for i in range(1, self.n_features_ + 1)]
         df = pd.DataFrame(
