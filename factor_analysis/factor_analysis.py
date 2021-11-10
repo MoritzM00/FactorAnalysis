@@ -34,15 +34,31 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
     max_iter : int, default=50
         The maximum number of iterations. Set it to 1 if you do not want
         the iterated PAF.
-    loadings_ : array_like, shape (n_features, n_factors)
+    is_corr_mtx : bool, default=False
+        If True, the passed data `X` is assumed to be the correlation matrix.
+
+    Attributes
+    ----------
+    loadings_ : ndarray, shape (n_features, n_factors)
         The factor loading matrix.
-    communalities_ : array_like, shape (n_features,)
+    communalities_ : ndarray, shape (n_features,)
         The communalities (or common variance) of the variables. This is the part
         of the variance of the variables that can be explained by the factors.
-    specific_variances_ : array_like, shape (n_features,)
+    specific_variances_ : ndarray, shape (n_features,)
         The specific variances for each variable. It is the part of the variance,
         that cannot be explained by the factors and is unique to each variable.
-        Therefore it is also known as the 'uniqueness'.
+        Therefore it is also known as the 'uniqueness' of a variable.
+    corr_ : ndarray, shape (n_features, n_features)
+        The empirical correlation matrix of the data.
+    n_samples_ : int
+        The number of samples.
+    n_features_ : int
+        The number of features.
+    n_iter_ : int
+        The number of iterations needed, until convergence criterion was fulfilled.
+        Not available if Convergence failed.
+    feature_names_in_ : ndarray, shape (n_features,)
+        The feature names seen during fit.
     """
 
     def __init__(
@@ -90,7 +106,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             self.n_samples_, self.n_features_ = X.shape
 
             # standardize data
-            Z, self.mean_, self.std_ = standardize(X)
+            Z, *_ = standardize(X)
 
             # calculate initial correlation matrix
             corr = np.dot(Z.T, Z) / (self.n_samples_ - 1)
