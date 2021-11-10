@@ -217,8 +217,10 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
     def summary(self, verbose=True):
         """
-        Returns two dataframes. One that contains the loading matrix, the communalities
-        and the specific variances, and the
+        Returns two dataframes. Df contains the loading matrix, the communalities
+        and the specific variances. The factor_info Dataframe contains the
+        eigenvalues of the factors, as well as the proportion of variance explained
+        and the cumulative variance.
 
         Parameters
         ----------
