@@ -175,7 +175,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         error_threshold = 0.001
         for i in range(self.max_iter):
             if error < error_threshold:
-                self.iterations_ = i
+                self.n_iter_ = i
                 self.converged_ = True
                 break
             # perform eigenvalue decomposition on the reduced correlation matrix
@@ -296,7 +296,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             print(factor_info)
             print(
                 f"Iterations needed until convergence: "
-                f"{self.iterations_ if self.converged_ else 'PAF did not converge'}"
+                f"{self.n_iter_ if self.converged_ else 'PAF did not converge'}"
             )
             print(f"Absolute difference (R - R_hat): {diff:.4f}")
         return df, factor_info
