@@ -6,12 +6,8 @@ on the big five personalities dataset
 """
 import numpy as np
 import pandas as pd
-from sklearn import set_config
 
 from factor_analysis import FactorAnalysis
-
-# print all parameters of the estimator
-set_config(print_changed_only=False)
 
 # load and clean data
 df = pd.read_csv(r".\data\big_five_personality.csv", sep="\t")
@@ -22,7 +18,7 @@ df.drop(df.columns[51:], axis=1, inplace=True)
 df.drop("country", axis=1, inplace=True)
 
 # Fit the model
-fa = FactorAnalysis(n_factors=5, rotation="varimax", feature_names=df.columns)
+fa = FactorAnalysis(n_factors=5, rotation="varimax")
 fa.fit(df)
 fa.summary()
 
