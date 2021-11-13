@@ -109,7 +109,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             Z, *_ = standardize(X)
 
             # calculate initial correlation matrix
-            corr = np.dot(Z.T, Z) / (self.n_samples_ - 1)
+            corr = np.dot(Z.T, Z) / (self.n_samples_)
             self.corr_ = corr.copy()
 
         if self.method == "paf":
@@ -182,7 +182,8 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             eigenvalues, eigenvectors = np.linalg.eigh(corr)
 
             # numerical trick, copied from factor-analyzer package
-            eigenvalues = np.maximum(eigenvalues, np.finfo(float).eps * 100)
+            eigenvalues[eigenvalues < np.finfo(float).eps] = np.finfo(float).eps * 100
+            # eigenvalues = np.maximum(eigenvalues, np.finfo(float).eps * 100)
 
             # sort the eigenvectors by eigenvalues from largest to smallest
             idx = eigenvalues.argsort()[::-1][: self.n_factors]
