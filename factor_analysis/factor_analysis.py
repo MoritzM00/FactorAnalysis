@@ -91,13 +91,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         self : FactorAnalysis
             The fitted model.
         """
-        if isinstance(X, pd.DataFrame):
-            # use the columns as feature names
-            self.feature_names_in_ = X.columns
-
-        X = check_array(X, copy=True)
-
-        # TODO: input validation
+        X = self._validate_input(X)
 
         if self.is_corr_mtx:
             self.corr_ = X.copy()
@@ -109,13 +103,12 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             Z, *_ = standardize(X)
 
             # calculate initial correlation matrix
-            corr = np.dot(Z.T, Z) / (self.n_samples_)
+            corr = np.dot(Z.T, Z) / self.n_samples_
             self.corr_ = corr.copy()
+        fit_methods = {"paf": self._fit_principal_axis}
 
-        if self.method == "paf":
-            self._fit_principal_axis()
-        else:
-            raise ValueError(f"Method {self.method} is not supported.")
+        # delegate to correct fit method
+        fit_methods[self.method]()
 
         if self.rotation is not None:
             self.loadings_ = factanal.Rotator(method=self.rotation).fit_transform(
@@ -181,7 +174,8 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             # perform eigenvalue decomposition on the reduced correlation matrix
             eigenvalues, eigenvectors = np.linalg.eigh(corr)
 
-            # numerical trick, copied from factor-analyzer package
+            # if a eigenvalue is smaller than the smallest representable float,
+            # set it to 100 times that value to avoid numeric issues
             eigenvalues[eigenvalues < np.finfo(float).eps] = np.finfo(float).eps * 100
             # eigenvalues = np.maximum(eigenvalues, np.finfo(float).eps * 100)
 
@@ -197,7 +191,6 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             # the new estimate for the communalities are the diagonal elements
             # of the reproduced correlation matrix
             new_communalities = np.diag(R_hat)
-
             # update communalities in the correlation matrix
             np.fill_diagonal(corr, new_communalities)
 
@@ -284,8 +277,9 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             },
             index=factors,
         )
-        # calculate difference between correlation matrix and reproduced corr mtx
-        diff = np.sum(np.abs(self.corr_ - self.get_covariance()))
+        # calculate root mean of squared difference between correlation matrix
+        # and reproduced corr mtx
+        rmsr = np.sqrt(np.mean((self.corr_ - self.get_covariance()) ** 2))
         if verbose:
             print(f"Call {self}")
             print(
@@ -299,7 +293,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
                 f"Iterations needed until convergence: "
                 f"{self.n_iter_ if self.converged_ else 'PAF did not converge'}"
             )
-            print(f"Absolute difference (R - R_hat): {diff:.4f}")
+            print(f"Root Mean Square of Residuals: {rmsr:.4f}")
         return df, factor_info
 
     @staticmethod
@@ -345,3 +339,41 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
         """
         return factanal.calculate_bartlett_sphericity(X)
+
+    def _validate_input(self, X):
+        """
+        Validates the input for correct specification. Sets the feature_names_in_
+        attribute if X was a DataFrame with string columns
+        """
+        if isinstance(X, pd.DataFrame):
+            cols = X.columns
+            # set the feature_names_in attribute
+            # only if the column names are all strings
+            if not cols.is_mixed() and cols.is_object():
+                # use the column names as feature names
+                self.feature_names_in_ = cols.copy()
+
+        X = check_array(X, copy=True)
+
+        if self.method is None or not isinstance(self.method, str):
+            raise ValueError(f"Unsupported method specified: {self.method}")
+        self.method = self.method.lower()
+        POSSIBLE_METHODS = ["paf"]
+        if self.method not in POSSIBLE_METHODS:
+            raise ValueError(
+                f"Method {self.method} is currently not supported."
+                f"It has to be one of {POSSIBLE_METHODS}."
+            )
+        if self.max_iter < 1:
+            raise ValueError(
+                f"max_iter has to be an integer greater or equal to 1, "
+                f"but got {self.max_iter} instead."
+            )
+        if self.n_factors < 1:
+            raise ValueError(
+                f"n_factor must be an integer greater or equal to 1, "
+                f"but got {self.n_factors} instead."
+            )
+        if self.rotation is not None:
+            self.rotation = self.rotation.lower()
+        return X
