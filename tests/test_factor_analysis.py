@@ -8,7 +8,9 @@ from sklearn.utils.estimator_checks import check_estimator
 
 from factor_analysis import FactorAnalysis
 
-pd.options.display.max_columns = 10
+pd.options.display.max_columns = 50
+pd.set_option("expand_frame_repr", True)
+pd.set_option("precision", 4)
 
 
 @pytest.mark.skip
@@ -16,25 +18,26 @@ def test_estimator_check():
     return check_estimator(FactorAnalysis())
 
 
-@pytest.mark.parametrize("n_factors", [1, 2, 3, 4])
-@pytest.mark.skip("FactorAnalyzer does not implement iterative paf")
+@pytest.mark.parametrize("n_factors", [2, 3])
 def test_iris(n_factors):
-    X = load_iris().data
+    X = load_iris(as_frame=True).data
 
-    fa1 = FactorAnalysis(n_factors=n_factors).fit(X)
+    fa = FactorAnalysis(n_factors=n_factors, rotation="varimax").fit(X)
     fa2 = factor_analyzer.FactorAnalyzer(
-        n_factors=n_factors, method="uls", svd_method="lapack", rotation=None
-    ).fit(X)
+        n_factors=n_factors, rotation="varimax", method="minres"
+    )
+    fa2.fit(X)
 
-    assert_allclose(fa1.loadings_, fa2.loadings_[:, :n_factors], atol=1e-2)
+    fa.summary()
 
 
 def test_book_example():
-    data = pd.read_excel(r".\data\application_example_backhaus_2021.xlsx")
-    assert data.shape == (29, 5)
+    data = pd.read_csv(
+        r".\data\application_example_backhaus_2021.CSV", sep=";", header=None
+    )
+    assert data.shape == (30, 5)
     fa = FactorAnalysis(n_factors=2).fit(data)
     fa.summary()
-    print(fa.transform(data))
 
 
 @pytest.mark.parametrize("rotation", ["varimax", "promax"])
