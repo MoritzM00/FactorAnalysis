@@ -1,4 +1,3 @@
-import factor_analyzer
 import numpy as np
 import pandas as pd
 import pytest
@@ -12,6 +11,8 @@ pd.options.display.max_columns = 50
 pd.set_option("expand_frame_repr", True)
 pd.set_option("precision", 4)
 
+np.set_printoptions(precision=4, suppress=True)
+
 
 @pytest.mark.skip
 def test_estimator_check():
@@ -22,22 +23,17 @@ def test_estimator_check():
 def test_iris(n_factors):
     X = load_iris(as_frame=True).data
 
-    fa = FactorAnalysis(n_factors=n_factors, rotation="varimax").fit(X)
-    fa2 = factor_analyzer.FactorAnalyzer(
-        n_factors=n_factors, rotation="varimax", method="minres"
-    )
-    fa2.fit(X)
-
+    fa = FactorAnalysis(n_factors=n_factors).fit(X)
     fa.summary()
 
 
-def test_book_example():
-    data = pd.read_csv(
-        r".\data\application_example_backhaus_2021.CSV", sep=";", header=None
-    )
-    assert data.shape == (30, 5)
+def test_book_example_two_factors(get_app_ex_data, get_app_ex_loadings):
+    data = get_app_ex_data
+    loadings = get_app_ex_loadings
+    communalities = [0.968, 0.526, 0.953, 0.991, 0.981]
     fa = FactorAnalysis(n_factors=2).fit(data)
-    fa.summary()
+    assert_allclose(fa.loadings_, loadings, atol=1e-3)
+    assert_allclose(fa.communalities_, communalities, atol=1e-3)
 
 
 @pytest.mark.parametrize("rotation", ["varimax", "promax"])
@@ -50,7 +46,8 @@ def test_women_dataset(rotation):
     fa.summary()
 
 
-def test_fit_using_corr_mtx():
+def test_fit_using_corr_mtx(get_app_ex_loadings):
+    loadings = get_app_ex_loadings
     R = np.array(
         [
             [1, 0.712, 0.961, 0.109, 0.044],
@@ -63,18 +60,8 @@ def test_fit_using_corr_mtx():
     fa = FactorAnalysis(n_factors=2, is_corr_mtx=True, max_iter=50)
     fa.feature_names_in_ = ["Milky", "Melting", "Artificial", "Fruity", "Refreshing"]
     fa.fit(R)
-    # these loadings are taken from Backhaus 2021: Multivariate Analysis, p.419
-    loadings = np.array(
-        [
-            [0.943, -0.280],
-            [0.707, -0.162],
-            [0.928, -0.302],
-            [0.389, 0.916],
-            [0.323, 0.936],
-        ]
-    )
-    print()
     fa.summary()
+
     assert_allclose(fa.loadings_, loadings, atol=1e-3)
 
 
@@ -88,3 +75,27 @@ def test_coastal_waves(n_factors):
 
     fa = FactorAnalysis(n_factors=n_factors).fit(df)
     fa.summary()
+
+
+@pytest.fixture(scope="session")
+def get_app_ex_data():
+    # Table 7.2 on p.387, Backhaus Multivariate Analysis
+    data = pd.read_csv(
+        r".\data\application_example_backhaus_2021.CSV", sep=";", header=None
+    )
+    return data
+
+
+@pytest.fixture
+def get_app_ex_loadings():
+    # these loadings are taken from Backhaus 2021: Multivariate Analysis, p.419
+    loadings = np.array(
+        [
+            [0.943, -0.280],
+            [0.707, -0.162],
+            [0.928, -0.302],
+            [0.389, 0.916],
+            [0.323, 0.936],
+        ]
+    )
+    return loadings
