@@ -48,17 +48,20 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         The specific variances for each variable. It is the part of the variance,
         that cannot be explained by the factors and is unique to each variable.
         Therefore it is also known as the 'uniqueness' of a variable.
+    complexities_ : ndarray, shape (n_features,)
+        Hoffmann's Complexity Index. It equals to 1 if a variable loads high
+        on only one factor and it equals 2 if a variable loads evenly on two factors.
     corr_ : ndarray, shape (n_features, n_features)
         The empirical correlation matrix of the data.
     n_samples_ : int
-        The number of samples.
+        The number of samples. Only available if `is_corr_mtx` is equal to False.
     n_features_ : int
         The number of features.
     n_iter_ : int
         The number of iterations needed, until convergence criterion was fulfilled.
-        Not available if Convergence failed.
     feature_names_in_ : ndarray, shape (n_features,)
-        The feature names seen during fit.
+        The feature names seen during fit. If `X` is a DataFrame, then it will
+        use the column names as feature names, if all columns are strings.
     """
 
     def __init__(
@@ -105,6 +108,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             # calculate initial correlation matrix
             corr = np.dot(Z.T, Z) / self.n_samples_
             self.corr_ = corr.copy()
+
         fit_methods = {"paf": self._fit_principal_axis}
 
         # delegate to correct fit method
