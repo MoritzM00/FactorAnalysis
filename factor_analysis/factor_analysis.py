@@ -178,19 +178,20 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             # set it to 100 times that value to avoid numeric issues
             eigenvalues[eigenvalues < np.finfo(float).eps] = np.finfo(float).eps * 100
             # eigenvalues = np.maximum(eigenvalues, np.finfo(float).eps * 100)
+            # eigenvalues = np.abs(eigenvalues)
 
             # sort the eigenvectors by eigenvalues from largest to smallest
             idx = eigenvalues.argsort()[::-1][: self.n_factors]
             eigenvalues = eigenvalues[idx]
             eigenvectors = eigenvectors[:, idx]
 
-            # update the loadings and calculate reproduced correlation matrix (R_hat)
+            # update the loadings
             loadings = np.dot(eigenvectors, np.diag(np.sqrt(eigenvalues)))
-            R_hat = np.dot(loadings, loadings.T)
 
-            # the new estimate for the communalities are the diagonal elements
-            # of the reproduced correlation matrix
-            new_communalities = np.diag(R_hat)
+            # the new estimate for the communalities is the sum of squares over
+            # each row in the loading matrix
+            new_communalities = np.sum(loadings ** 2, axis=1)
+
             # update communalities in the correlation matrix
             np.fill_diagonal(corr, new_communalities)
 
@@ -207,10 +208,15 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         # are the final communalities
         self.communalities_ = np.sum(loadings ** 2, axis=1)
         self.specific_variances_ = 1 - self.communalities_
+        self.complexities_ = np.sum(loadings ** 2, axis=1) ** 2 / np.sum(
+            loadings ** 4, axis=1
+        )
 
+        # the eigenvalue of a factor is referred to as the sum of the squared loadings
+        # in each column
+        self.eigenvalues_ = np.sum(loadings ** 2, axis=0)
         # proportion of variance explained by each factor
-        self.eigenvalues_ = eigenvalues
-        self.var_explained_ = eigenvalues / self.n_features_
+        self.var_explained_ = self.eigenvalues_ / self.n_features_
 
     def get_covariance(self):
         """
@@ -249,10 +255,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             f"{'Rotated ' if self.rotation is not None else ''}Factor {i}"
             for i in range(1, self.n_factors + 1)
         ]
-        column_names = factors + [
-            "Communalities",
-            "Specific variances",
-        ]
+        column_names = factors + ["Communality", "Specific Variance", "Complexity"]
         if hasattr(self, "feature_names_in_"):
             idx = self.feature_names_in_
         else:
@@ -263,6 +266,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
                     self.loadings_,
                     self.communalities_.reshape(-1, 1),
                     self.specific_variances_.reshape(-1, 1),
+                    self.complexities_.reshape(-1, 1),
                 ),
                 axis=1,
             ),
