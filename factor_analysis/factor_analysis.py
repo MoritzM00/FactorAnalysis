@@ -262,7 +262,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         """
         check_is_fitted(self)
         factors = [
-            f"{'Rotated ' if self.rotation is not None else ''}Factor {i}"
+            f"{'R' if self.rotation is not None else ''}F{i}"
             for i in range(1, self.n_factors + 1)
         ]
         column_names = factors + ["Communality", "Specific Variance", "Complexity"]
