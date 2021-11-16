@@ -356,13 +356,11 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         Validates the input for correct specification. Sets the feature_names_in_
         attribute if X was a DataFrame with string columns
         """
-        if isinstance(X, pd.DataFrame):
-            cols = X.columns
+        if isinstance(X, pd.DataFrame) and X.columns.inferred_type == "string":
             # set the feature_names_in attribute
             # only if the column names are all strings
-            if not cols.is_mixed() and cols.is_object():
-                # use the column names as feature names
-                self.feature_names_in_ = cols.copy()
+            # use the column names as feature names
+            self.feature_names_in_ = X.columns.copy()
 
         X = check_array(X, copy=True)
 
