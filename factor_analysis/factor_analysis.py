@@ -2,12 +2,15 @@
 Exploratory Factor Analysis.
 """
 
+import warnings
+
 import factor_analyzer as factanal
 import numpy as np
 import pandas as pd
 from numpy.linalg import LinAlgError
 from sklearn import set_config
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.utils.validation import check_array, check_is_fitted
 from utils import smc, standardize
 
@@ -173,7 +176,6 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         for i in range(self.max_iter):
             if error < error_threshold:
                 self.n_iter_ = i
-                self.converged_ = True
                 break
             # perform eigenvalue decomposition on the reduced correlation matrix
             eigenvalues, eigenvectors = np.linalg.eigh(corr)
@@ -204,7 +206,11 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             error = np.abs(new_sum - sum_of_communalities)
             sum_of_communalities = new_sum
         else:
-            self.converged_ = False
+            warnings.warn(
+                "PAF algorithm did not converge. Consider increasing the `max_iter`"
+                "parameter",
+                ConvergenceWarning,
+            )
 
         self.loadings_ = loadings
 
@@ -297,10 +303,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             print("Summary of estimated parameters: \n")
             print(df, "\n")
             print(factor_info)
-            print(
-                f"Iterations needed until convergence: "
-                f"{self.n_iter_ if self.converged_ else 'PAF did not converge'}"
-            )
+            print(f"Iterations needed until convergence: {self.n_iter_}")
             print(f"Root Mean Square of Residuals: {rmsr:.4f}")
         return df, factor_info
 
