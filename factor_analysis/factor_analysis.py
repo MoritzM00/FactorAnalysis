@@ -29,14 +29,16 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
     n_factors : int
         The number of factors.
     method : str, default='paf'
-        The fitting method, currently only (iterated) principal axis factoring (PAF)
-        is supported.
+        The fitting method. Currently (iterated) principal axis factoring and
+        principal components method is implemented.
+        For PAF use method='paf'
+        For Principal Comp. use method='pc'
     rotation : str, default=None
         Sets the factor rotation method. If you do not want to rotate the factors
         after factor extraction, leave it at default=None.
     max_iter : int, default=50
-        The maximum number of iterations. Set it to 1 if you do not want
-        the iterated PAF.
+        The maximum number of iterations. Ignored if method='pc'.
+        Set it to 1 if you do not want the iterated PAF.
     is_corr_mtx : bool, default=False
         If True, the passed data `X` is assumed to be the correlation matrix.
 
@@ -56,6 +58,8 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         on only one factor and it equals 2 if a variable loads evenly on two factors.
     corr_ : ndarray, shape (n_features, n_features)
         The empirical correlation matrix of the data.
+    eigenvalues_ : ndarray, shape (n_factors,)
+        The eigenvalues of the selected factors.
     n_samples_ : int
         The number of samples. Only available if `is_corr_mtx` is equal to False.
     n_features_ : int
@@ -112,10 +116,30 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             corr = np.dot(Z.T, Z) / self.n_samples_
             self.corr_ = corr.copy()
 
-        fit_methods = {"paf": self._fit_principal_axis}
+        fit_methods = {
+            "paf": self._fit_principal_axis,
+            "pc": self._fit_principal_component,
+        }
 
         # delegate to correct fit method
         fit_methods[self.method]()
+
+        # calculate class attributes after fitting
+
+        # sum of the squared loadings for each variable (each row)
+        # are the final communalities
+        squared_loadings = self.loadings_ ** 2
+        self.communalities_ = np.sum(squared_loadings, axis=1)
+        self.specific_variances_ = 1 - self.communalities_
+        self.complexities_ = np.sum(squared_loadings, axis=1) ** 2 / np.sum(
+            squared_loadings ** 2, axis=1
+        )
+
+        # the eigenvalue of a factor is referred to as the sum of the squared loadings
+        # in each column
+        self.eigenvalues_ = np.sum(squared_loadings, axis=0)
+        # proportion of variance explained by each factor
+        self.var_explained_ = self.eigenvalues_ / self.n_features_
 
         if self.rotation is not None:
             self.loadings_ = factanal.Rotator(method=self.rotation).fit_transform(
@@ -214,19 +238,12 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
         self.loadings_ = loadings
 
-        # sum of the squared loadings for each variable (each row)
-        # are the final communalities
-        self.communalities_ = np.sum(loadings ** 2, axis=1)
-        self.specific_variances_ = 1 - self.communalities_
-        self.complexities_ = np.sum(loadings ** 2, axis=1) ** 2 / np.sum(
-            loadings ** 4, axis=1
-        )
-
-        # the eigenvalue of a factor is referred to as the sum of the squared loadings
-        # in each column
-        self.eigenvalues_ = np.sum(loadings ** 2, axis=0)
-        # proportion of variance explained by each factor
-        self.var_explained_ = self.eigenvalues_ / self.n_features_
+    def _fit_principal_component(self):
+        """
+        Fit the factor analysis model using the principal component method.
+        (Not principal component analysis)
+        """
+        ...
 
     def get_covariance(self):
         """
@@ -389,7 +406,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         if self.method is None or not isinstance(self.method, str):
             raise ValueError(f"Unsupported method specified: {self.method}")
         self.method = self.method.lower()
-        POSSIBLE_METHODS = ["paf"]
+        POSSIBLE_METHODS = ["paf", "pc"]
         if self.method not in POSSIBLE_METHODS:
             raise ValueError(
                 f"Method {self.method} is currently not supported."
