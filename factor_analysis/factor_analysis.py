@@ -243,7 +243,15 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         Fit the factor analysis model using the principal component method.
         (Not principal component analysis)
         """
-        ...
+        corr = self.corr_.copy()
+
+        eigenvalues, eigenvectors = np.linalg.eigh(corr)
+        # sort descending
+        idx = eigenvalues.argsort()[::-1][: self.n_factors]
+        eigenvalues = eigenvalues[idx]
+        eigenvectors = eigenvectors[:, idx]
+
+        self.loadings_ = np.dot(eigenvectors, np.diag(np.sqrt(eigenvalues)))
 
     def get_covariance(self):
         """
