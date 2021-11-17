@@ -241,7 +241,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             self.specific_variances_
         )
 
-    def summary(self, verbose=True):
+    def summary(self, verbose=True, force_full_print=True, precision=4):
         """
         Returns two dataframes. Df contains the loading matrix, the communalities
         and the specific variances. The factor_info Dataframe contains the
@@ -252,6 +252,11 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         ----------
         verbose : bool, default=True
             If true, then print the output.
+        force_full_print : bool, default=True
+            If True, then it prints the dataframes with no column or row
+            width limitations.
+        precision : int, default=4
+            Can be used to specify the precision for printing floats.
 
         Returns
         -------
@@ -295,16 +300,33 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         # and reproduced corr mtx
         rmsr = np.sqrt(np.mean((self.corr_ - self.get_covariance()) ** 2))
         if verbose:
-            print(f"Call {self}")
-            print(
-                f"Number of samples: {self.n_samples_ if not self.is_corr_mtx else 'NA'}"
+            option_precision = ["display.precision", precision]
+            option_full_print = [
+                "display.max_rows",
+                None,
+                "display.max_columns",
+                None,
+                "display.width",
+                2000,
+                "display.max_colwidth",
+                None,
+            ]
+            options = (
+                option_precision + option_full_print
+                if force_full_print
+                else option_precision
             )
-            print(f"Number of features: {self.n_features_}")
-            print("Summary of estimated parameters: \n")
-            print(df, "\n")
-            print(factor_info)
-            print(f"Iterations needed until convergence: {self.n_iter_}")
-            print(f"Root Mean Square of Residuals: {rmsr:.4f}")
+            with pd.option_context(*options):
+                print(f"Call {self}")
+                print(
+                    f"Number of samples: {self.n_samples_ if not self.is_corr_mtx else 'NA'}"
+                )
+                print(f"Number of features: {self.n_features_}")
+                print("Summary of estimated parameters: \n")
+                print(df, "\n")
+                print(factor_info)
+                print(f"Iterations needed until convergence: {self.n_iter_}")
+                print(f"Root Mean Square of Residuals: {rmsr:.4f}")
         return df, factor_info
 
     @staticmethod
