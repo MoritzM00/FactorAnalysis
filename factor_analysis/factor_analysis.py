@@ -196,8 +196,8 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         # replace the diagonal "ones" with the initial estimate of the communalities
         np.fill_diagonal(corr, start_estimate)
 
-        sum_of_communalities = start_estimate.sum()
-        error = sum_of_communalities
+        old_sum = start_estimate.sum()
+        error = old_sum
         error_threshold = 0.001
         for i in range(self.max_iter):
             if error < error_threshold:
@@ -206,15 +206,13 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             # perform eigenvalue decomposition on the reduced correlation matrix
             eigenvalues, eigenvectors = np.linalg.eigh(corr)
 
-            # if a eigenvalue is smaller than the smallest representable float,
-            # set it to 100 times that value to avoid numeric issues
-            # eigenvalues[eigenvalues < np.finfo(float).eps] = np.finfo(float).eps * 100
-            # eigenvalues = np.maximum(eigenvalues, np.finfo(float).eps * 100)
-            eigenvalues = np.abs(eigenvalues)
-
             # sort the eigenvectors by eigenvalues from largest to smallest
             eigenvalues = eigenvalues[::-1][: self.n_factors]
             eigenvectors = eigenvectors[:, ::-1][:, : self.n_factors]
+
+            # if abs of eigenvalues is taken, the explained variance should
+            # not be reported as it makes no sense any more
+            # eigenvalues = np.abs(eigenvalues)
 
             if np.any(eigenvalues < 0):
                 raise ValueError(
@@ -227,15 +225,18 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
             # the new estimate for the communalities is the sum of squares over
             # each row in the loading matrix
-            new_communalities = np.sum(loadings ** 2, axis=1)
+            comm = np.sum(loadings ** 2, axis=1)
+
+            # strip Heywood cases to 1.0 and continue iterating
+            comm = np.where(comm > 1.0, 1.0, comm)
 
             # update communalities in the correlation matrix
-            np.fill_diagonal(corr, new_communalities)
+            np.fill_diagonal(corr, comm)
 
             # update error variables
-            new_sum = new_communalities.sum()
-            error = np.abs(new_sum - sum_of_communalities)
-            sum_of_communalities = new_sum
+            new_sum = comm.sum()
+            error = np.abs(new_sum - old_sum)
+            old_sum = new_sum
         else:
             warnings.warn(
                 "PAF algorithm did not converge. Consider increasing the `max_iter`"
@@ -249,14 +250,16 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         """
         Fit the factor analysis model using the principal component method.
         (Not principal component analysis)
+
+        This is equivalent to using _fit_principal_axis with starting value 1 and
+        max_iter = 1.
         """
         corr = self.corr_.copy()
 
         eigenvalues, eigenvectors = np.linalg.eigh(corr)
         # sort descending
-        idx = eigenvalues.argsort()[::-1][: self.n_factors]
-        eigenvalues = eigenvalues[idx]
-        eigenvectors = eigenvectors[:, idx]
+        eigenvalues = eigenvalues[::-1][: self.n_factors]
+        eigenvectors = eigenvectors[:, ::-1][:, : self.n_factors]
 
         self.loadings_ = np.dot(eigenvectors, np.diag(np.sqrt(eigenvalues)))
 
