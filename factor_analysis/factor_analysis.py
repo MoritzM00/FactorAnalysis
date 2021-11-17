@@ -253,9 +253,9 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
         self.loadings_ = np.dot(eigenvectors, np.diag(np.sqrt(eigenvalues)))
 
-    def get_covariance(self):
+    def get_reprod_corr(self):
         """
-        Returns the reproduced (model) covariance matrix.
+        Returns the reproduced correlation matrix.
 
         Returns
         -------
@@ -321,9 +321,6 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             },
             index=factors,
         )
-        # calculate root mean of squared difference between correlation matrix
-        # and reproduced corr mtx
-        rmsr = np.sqrt(np.mean((self.corr_ - self.get_covariance()) ** 2))
         if verbose:
             option_precision = ["display.precision", precision]
             option_full_print = [
@@ -350,9 +347,23 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
                 print("Summary of estimated parameters: \n")
                 print(df, "\n")
                 print(factor_info)
-                print(f"Iterations needed until convergence: {self.n_iter_}")
-                print(f"Root Mean Square of Residuals: {rmsr:.4f}")
+                if self.method == "paf":
+                    print(f"Iterations needed until convergence: {self.n_iter_}")
+                print(f"Root mean squared error of residuals: {self.get_rmse():.4f}")
         return df, factor_info
+
+    def get_rmse(self):
+        """
+        Root mean squared error of residuals.
+
+        Here the residual matrix is defined as the difference between the
+        empirical and the reproduced correlation matrix.
+
+        Returns
+        -------
+
+        """
+        return np.sqrt(np.mean((self.corr_ - self.get_reprod_corr()) ** 2))
 
     @staticmethod
     def calculate_kmo(X):
