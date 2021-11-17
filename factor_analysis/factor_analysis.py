@@ -41,6 +41,9 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         Set it to 1 if you do not want the iterated PAF.
     is_corr_mtx : bool, default=False
         If True, the passed data `X` is assumed to be the correlation matrix.
+    use_smc : bool, default=True
+        If true, use squared multiple correlations as initial estimate
+        for the communalities.
 
     Attributes
     ----------
@@ -78,12 +81,14 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         rotation=None,
         max_iter=50,
         is_corr_mtx=False,
+        use_smc=True,
     ):
         self.n_factors = n_factors
         self.method = method
         self.rotation = rotation
         self.max_iter = max_iter
         self.is_corr_mtx = is_corr_mtx
+        self.use_smc = use_smc
 
     def fit(self, X, y=None):
         """
@@ -116,13 +121,14 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             corr = np.dot(Z.T, Z) / self.n_samples_
             self.corr_ = corr.copy()
 
-        fit_methods = {
-            "paf": self._fit_principal_axis,
-            "pc": self._fit_principal_component,
-        }
-
-        # delegate to correct fit method
-        fit_methods[self.method]()
+        if self.method == "paf":
+            if self.use_smc:
+                start = smc(self.corr_)
+            else:
+                start = np.repeat(1, self.n_features_)
+            self._fit_principal_axis(start_estimate=start)
+        else:
+            self._fit_principal_component()
 
         # calculate class attributes after fitting
 
@@ -184,17 +190,13 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         X_new = np.dot(Z, weights)
         return X_new
 
-    def _fit_principal_axis(self):
+    def _fit_principal_axis(self, start_estimate):
         corr = self.corr_.copy()
 
-        # using squared multiple correlations as initial estimate
-        # for communalities
-        squared_multiple_corr = smc(corr)
+        # replace the diagonal "ones" with the initial estimate of the communalities
+        np.fill_diagonal(corr, start_estimate)
 
-        # replace the diagonal "ones" with the estimated communalities
-        np.fill_diagonal(corr, squared_multiple_corr)
-
-        sum_of_communalities = squared_multiple_corr.sum()
+        sum_of_communalities = start_estimate.sum()
         error = sum_of_communalities
         error_threshold = 0.001
         for i in range(self.max_iter):
@@ -206,14 +208,19 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
             # if a eigenvalue is smaller than the smallest representable float,
             # set it to 100 times that value to avoid numeric issues
-            eigenvalues[eigenvalues < np.finfo(float).eps] = np.finfo(float).eps * 100
+            # eigenvalues[eigenvalues < np.finfo(float).eps] = np.finfo(float).eps * 100
             # eigenvalues = np.maximum(eigenvalues, np.finfo(float).eps * 100)
-            # eigenvalues = np.abs(eigenvalues)
+            eigenvalues = np.abs(eigenvalues)
 
             # sort the eigenvectors by eigenvalues from largest to smallest
-            idx = eigenvalues.argsort()[::-1][: self.n_factors]
-            eigenvalues = eigenvalues[idx]
-            eigenvectors = eigenvectors[:, idx]
+            eigenvalues = eigenvalues[::-1][: self.n_factors]
+            eigenvectors = eigenvectors[:, ::-1][:, : self.n_factors]
+
+            if np.any(eigenvalues < 0):
+                raise ValueError(
+                    "Fit using the PAF algorithm with SMC as starting value"
+                    "failed. Try again with `use_smc=False`."
+                )
 
             # update the loadings
             loadings = np.dot(eigenvectors, np.diag(np.sqrt(eigenvalues)))
@@ -347,7 +354,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
                 print("Summary of estimated parameters: \n")
                 print(df, "\n")
                 print(factor_info)
-                if self.method == "paf":
+                if self.method == "paf" and self.max_iter > 1:
                     print(f"Iterations needed until convergence: {self.n_iter_}")
                 print(f"Root mean squared error of residuals: {self.get_rmse():.4f}")
         return df, factor_info
