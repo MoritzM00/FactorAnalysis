@@ -14,11 +14,11 @@ def test_estimator_check():
 
 
 @pytest.mark.parametrize("n_factors", [2, 3])
-@pytest.skip
+@pytest.mark.skip
 def test_iris(n_factors):
     X = load_iris(as_frame=True).data
     fa = FactorAnalysis(n_factors=n_factors).fit(X)
-    fa.summary()
+    fa.print_summary()
 
 
 def test_book_example_two_factors(get_app_ex_data, get_app_ex_loadings):
@@ -38,7 +38,7 @@ def test_women_dataset(rotation):
     # first column is the country, so we drop it
     df.drop(columns=["COUNTRY"], inplace=True)
     fa = FactorAnalysis(n_factors=2, rotation=rotation).fit(df)
-    fa.summary()
+    fa.print_summary()
     # TODO: assert something
 
 
@@ -62,7 +62,7 @@ def test_fit_using_corr_mtx(get_app_ex_loadings):
 
 
 @pytest.mark.parametrize("n_factors", [1, 2, 3, 4])
-@pytest.skip("no assertions")
+@pytest.mark.skip("no assertions")
 def test_coastal_waves(n_factors):
     df = pd.read_csv(r".\data\coastal_waves_data.csv", sep=",")
     df.replace(-99.90, np.nan, inplace=True)

@@ -276,20 +276,29 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             self.specific_variances_
         )
 
-    def summary(self, verbose=True, force_full_print=True, precision=4):
+    def print_summary(self, force_full_print=True, precision=4):
         """
-        Returns two dataframes. Df contains the loading matrix, the communalities
+        Prints a summary of the estimated parameters of the
+        factor analysis model including:
+         - loadings
+         - communalities
+         - specific variances
+         - eigenvalues of the factors
+         - % of variance explained by each factor
+         - cumulative % explained
+         - Root mean squared error of residuals
+
+        It also returns two dataframes. Df contains the loading matrix, the communalities
         and the specific variances. The factor_info Dataframe contains the
         eigenvalues of the factors, as well as the proportion of variance explained
         and the cumulative variance.
 
         Parameters
         ----------
-        verbose : bool, default=True
-            If true, then print the output.
         force_full_print : bool, default=True
             If True, then it prints the dataframes with no column or row
-            width limitations.
+            width limitations. Otherwise it will print dots if the width
+            of the dataframe is too big.
         precision : int, default=4
             Can be used to specify the precision for printing floats.
 
@@ -331,35 +340,34 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             },
             index=factors,
         )
-        if verbose:
-            option_precision = ["display.precision", precision]
-            option_full_print = [
-                "display.max_rows",
-                None,
-                "display.max_columns",
-                None,
-                "display.width",
-                2000,
-                "display.max_colwidth",
-                None,
-            ]
-            options = (
-                option_precision + option_full_print
-                if force_full_print
-                else option_precision
+        option_precision = ["display.precision", precision]
+        option_full_print = [
+            "display.max_rows",
+            None,
+            "display.max_columns",
+            None,
+            "display.width",
+            2000,
+            "display.max_colwidth",
+            None,
+        ]
+        options = (
+            option_precision + option_full_print
+            if force_full_print
+            else option_precision
+        )
+        with pd.option_context(*options):
+            print(f"Call {self}")
+            print(
+                f"Number of samples: {self.n_samples_ if not self.is_corr_mtx else 'NA'}"
             )
-            with pd.option_context(*options):
-                print(f"Call {self}")
-                print(
-                    f"Number of samples: {self.n_samples_ if not self.is_corr_mtx else 'NA'}"
-                )
-                print(f"Number of features: {self.n_features_}")
-                print("Summary of estimated parameters: \n")
-                print(df, "\n")
-                print(factor_info)
-                if self.method == "paf" and self.max_iter > 1:
-                    print(f"Iterations needed until convergence: {self.n_iter_}")
-                print(f"Root mean squared error of residuals: {self.get_rmse():.4f}")
+            print(f"Number of features: {self.n_features_}")
+            print("Summary of estimated parameters: \n")
+            print(df, "\n")
+            print(factor_info)
+            if self.method == "paf" and self.max_iter > 1:
+                print(f"Iterations needed until convergence: {self.n_iter_}")
+            print(f"Root mean squared error of residuals: {self.get_rmse():.4f}")
         return df, factor_info
 
     def get_rmse(self):

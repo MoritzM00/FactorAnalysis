@@ -70,4 +70,4 @@ plt.show()
 # keep 3 factors
 
 fa = FactorAnalysis(n_factors=3, rotation="varimax").fit(data)
-fa.summary(force_full_print=True, precision=4)
+fa.print_summary(force_full_print=True, precision=4)
