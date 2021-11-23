@@ -276,7 +276,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             self.specific_variances_
         )
 
-    def print_summary(self, force_full_print=True, precision=4):
+    def print_summary(self, file=None, force_full_print=True, precision=4):
         """
         Prints a summary of the estimated parameters of the
         factor analysis model including:
@@ -295,6 +295,11 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
         Parameters
         ----------
+        file : File, default=None
+            Optional. If specified, then the output is written to the
+            given file. The user has to take care of opening and closing
+            the file. Surround the 'print_summary(..., file=f)' statement with a
+            ``with open(file, 'a') as f:`` and then pass f as argument to this method.
         force_full_print : bool, default=True
             If True, then it prints the dataframes with no column or row
             width limitations. Otherwise it will print dots if the width
@@ -356,18 +361,29 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             if force_full_print
             else option_precision
         )
+
+        # define custom print function, if the user wants to
+        # write the output to a file
+        def my_print(*args):
+            if file:
+                # write output to specified file
+                print(*args, file=file)
+            else:
+                # else just print it to std.out
+                print(*args)
+
         with pd.option_context(*options):
-            print(f"Call fit on {self}")
-            print(
+            my_print(f"Call fit on {self}")
+            my_print(
                 f"Number of samples: {self.n_samples_ if not self.is_corr_mtx else 'NA'}"
             )
-            print(f"Number of features: {self.n_features_}")
-            print("Summary of estimated parameters: \n")
-            print(df, "\n")
-            print(factor_info)
+            my_print(f"Number of features: {self.n_features_}")
+            my_print("Summary of estimated parameters: \n")
+            my_print(df, "\n")
+            my_print(factor_info, "\n")
             if self.method == "paf" and self.max_iter > 1:
-                print(f"Iterations needed until convergence: {self.n_iter_}")
-            print(f"Root mean squared error of residuals: {self.get_rmse():.4f}")
+                my_print(f"Iterations needed until convergence: {self.n_iter_}")
+            my_print(f"Root mean squared error of residuals: {self.get_rmse():.4f}")
         return df, factor_info
 
     def get_rmse(self):
