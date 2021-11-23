@@ -357,7 +357,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             else option_precision
         )
         with pd.option_context(*options):
-            print(f"Call {self}")
+            print(f"Call fit on {self}")
             print(
                 f"Number of samples: {self.n_samples_ if not self.is_corr_mtx else 'NA'}"
             )
