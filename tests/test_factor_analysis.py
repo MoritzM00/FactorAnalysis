@@ -23,12 +23,12 @@ def test_iris(n_factors):
 
 def test_book_example_two_factors(get_app_ex_data, get_app_ex_loadings):
     data = get_app_ex_data
+    corr = data.corr()
     loadings = get_app_ex_loadings
     communalities = [0.968, 0.526, 0.953, 0.991, 0.981]
-    fa = FactorAnalysis(n_factors=2, use_smc=True).fit(data)
-    # fa.summary(precision=3)
-    assert_allclose(fa.loadings_, loadings, atol=1e-3)
-    assert_allclose(fa.communalities_, communalities, atol=1e-3)
+    fa = FactorAnalysis(n_factors=2, is_corr_mtx=True).fit(corr)
+    assert_allclose(fa.loadings_, loadings, atol=1e-2)
+    assert_allclose(fa.communalities_, communalities, atol=1e-2)
 
 
 @pytest.mark.parametrize("rotation", ["varimax", "promax"])
