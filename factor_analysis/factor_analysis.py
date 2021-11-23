@@ -118,7 +118,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             Z, *_ = standardize(X)
 
             # calculate initial correlation matrix
-            corr = np.dot(Z.T, Z) / self.n_samples_
+            corr = np.dot(Z.T, Z) / (self.n_samples_ - 1)
             self.corr_ = corr.copy()
 
         if self.method == "paf":
@@ -216,7 +216,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
             if np.any(eigenvalues < 0):
                 raise ValueError(
-                    "Fit using the PAF algorithm with SMC as starting value"
+                    "Fit using the PAF algorithm with SMC as starting value "
                     "failed. Try again with `use_smc=False`."
                 )
 
@@ -238,6 +238,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             error = np.abs(new_sum - old_sum)
             old_sum = new_sum
         else:
+            self.n_iter_ = self.max_iter
             warnings.warn(
                 "PAF algorithm did not converge. Consider increasing the `max_iter`"
                 "parameter",
@@ -382,7 +383,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             my_print(df, "\n")
             my_print(factor_info, "\n")
             if self.method == "paf" and self.max_iter > 1:
-                my_print(f"Iterations needed until convergence: {self.n_iter_}")
+                my_print(f"Number of iterations: {self.n_iter_}")
             my_print(f"Root mean squared error of residuals: {self.get_rmse():.4f}")
         return df, factor_info
 
