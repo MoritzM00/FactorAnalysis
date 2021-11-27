@@ -284,15 +284,13 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
          - loadings
          - communalities
          - specific variances
+         - Root mean squared error of residuals
+
+         If the fitting method was principal components (PC) then the following is reported as well:
+
          - eigenvalues of the factors
          - % of variance explained by each factor
          - cumulative % explained
-         - Root mean squared error of residuals
-
-        It also returns two dataframes. Df contains the loading matrix, the communalities
-        and the specific variances. The factor_info Dataframe contains the
-        eigenvalues of the factors, as well as the proportion of variance explained
-        and the cumulative variance.
 
         Parameters
         ----------
@@ -381,7 +379,8 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             my_print(f"Number of features: {self.n_features_}")
             my_print("Summary of estimated parameters: \n")
             my_print(df, "\n")
-            my_print(factor_info, "\n")
+            if self.method == "pc":
+                my_print(factor_info, "\n")
             if self.method == "paf" and self.max_iter > 1:
                 my_print(f"Number of iterations: {self.n_iter_}")
             my_print(f"Root mean squared error of residuals: {self.get_rmse():.4f}")
