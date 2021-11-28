@@ -17,6 +17,7 @@ import pandas as pd
 import seaborn as sns
 
 from factor_analysis import FactorAnalysis
+from factor_analysis.utils import scree_plot
 
 np.set_printoptions(precision=4, suppress=True)
 
@@ -55,19 +56,14 @@ fig = plt.figure(figsize=(13, 13))
 sns.heatmap(data=corr, vmax=1, vmin=-1, cmap="RdBu", mask=mask)
 plt.show()
 
-fa = FactorAnalysis(n_factors=12).fit(data)
+fa = FactorAnalysis(n_factors=12, use_smc=False).fit(data)
 
-# scree plot
-x_nfactors = np.arange(fa.n_factors) + 1
-plt.plot(x_nfactors, fa.eigenvalues_, "bo-", linewidth=2)
-plt.axhline(1, c="g")
-plt.title("Scree Plot")
-plt.xlabel("Factor")
-plt.ylabel("Eigenvalue")
+fig, ax = plt.subplots(figsize=(6, 4))
+scree_plot(fa.eigenvalues_, axis=ax)
 plt.show()
 
 # according to Kaiser's Eigenvalue Criterion, it should be enough to only
 # keep 3 factors
 
-fa = FactorAnalysis(n_factors=3, rotation="varimax").fit(data)
+fa = FactorAnalysis(n_factors=3, method="paf", rotation="varimax").fit(data)
 fa.print_summary(force_full_print=True, precision=4)
