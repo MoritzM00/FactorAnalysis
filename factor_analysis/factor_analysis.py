@@ -7,12 +7,12 @@ import warnings
 import factor_analyzer as factanal
 import numpy as np
 import pandas as pd
-from numpy.linalg import LinAlgError
 from sklearn import set_config
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.utils.validation import check_array, check_is_fitted
-from utils import smc, standardize
+
+from factor_analysis.utils import smc, standardize
 
 # print all parameters of the estimator
 set_config(print_changed_only=False)
@@ -141,7 +141,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             squared_loadings ** 2, axis=1
         )
 
-        # the eigenvalue of a factor is referred to as the sum of the squared loadings
+        # the eigenvalue of a factor is the sum of the squared loadings
         # in each column
         self.eigenvalues_ = np.sum(squared_loadings, axis=0)
         # proportion of variance explained by each factor
@@ -162,7 +162,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         """
-        Transforms the data using the factors.
+        Computes the factors scores using the regression method.
 
         Parameters
         ----------
@@ -171,24 +171,17 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
         Returns
         -------
-        X_new : array_like, shape (n_samples, n_factors)
-            The transformed samples.
+        F : array_like, shape (n_samples, n_factors)
+            The factor scores
         """
         check_is_fitted(self)
 
         X = check_array(X, copy=True)
         Z, *_ = standardize(X)
+        inv_corr = np.linalg.inv(np.cov(Z, rowvar=False))
 
-        try:
-            weights = np.linalg.solve(self.corr_, self.loadings_)
-        except LinAlgError as e:
-            print(e)
-            print("Uses factor loadings instead.")
-            weights = self.loadings_
-
-        # factor scores
-        X_new = np.dot(Z, weights)
-        return X_new
+        F = np.linalg.multi_dot([Z, inv_corr, self.loadings_])
+        return F
 
     def _fit_principal_axis(self, start_estimate):
         corr = self.corr_.copy()
@@ -209,10 +202,6 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             # sort the eigenvectors by eigenvalues from largest to smallest
             eigenvalues = eigenvalues[::-1][: self.n_factors]
             eigenvectors = eigenvectors[:, ::-1][:, : self.n_factors]
-
-            # if abs of eigenvalues is taken, the explained variance should
-            # not be reported as it makes no sense any more
-            # eigenvalues = np.abs(eigenvalues)
 
             if np.any(eigenvalues < 0):
                 raise ValueError(
