@@ -2,3 +2,5 @@ numpy
 pandas
 scikit-learn
 factor-analyzer
+matplotlib
+seaborn
