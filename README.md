@@ -15,6 +15,6 @@ pip install -r requirements.txt
 If you want to run tests and commit to the project, then run
 
 ```bash
-pip install -r requirements_dev.txt
+pip install -r requirements-dev.txt
 pre-commit install
 ```
