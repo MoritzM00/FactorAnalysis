@@ -7,6 +7,7 @@ import warnings
 import factor_analyzer as factanal
 import numpy as np
 import pandas as pd
+from numpy.linalg import LinAlgError
 from sklearn import set_config
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.exceptions import ConvergenceWarning
@@ -123,7 +124,13 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
         if self.method == "paf":
             if self.use_smc:
-                start = smc(self.corr_)
+                try:
+                    start = smc(self.corr_)
+                except LinAlgError:
+                    # use maximum absolute correlation in each row
+                    start = np.max(
+                        np.abs(self.corr_ - np.eye(self.n_features_)), axis=0
+                    )
             else:
                 start = np.repeat(1, self.n_features_)
             self._fit_principal_axis(start_estimate=start)
