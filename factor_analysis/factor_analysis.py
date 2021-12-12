@@ -7,6 +7,7 @@ import warnings
 import factor_analyzer as factanal
 import numpy as np
 import pandas as pd
+from factor_analyzer.rotator import ORTHOGONAL_ROTATIONS
 from numpy.linalg import LinAlgError
 from sklearn import set_config
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -471,6 +472,11 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
                 f"n_factor must be an integer greater or equal to 1, "
                 f"but got {self.n_factors} instead."
             )
-        if self.rotation is not None:
-            self.rotation = self.rotation.lower()
+        if self.rotation not in [None] + ORTHOGONAL_ROTATIONS:
+            raise ValueError(
+                f"Rotation method must be None"
+                f" or one of the following orthogonal rotations:"
+                f" {ORTHOGONAL_ROTATIONS}"
+            )
+        self.rotation = self.rotation.lower() if self.rotation else None
         return X
