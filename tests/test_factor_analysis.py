@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -31,9 +33,11 @@ def test_book_example_two_factors(get_app_ex_data, get_app_ex_loadings):
     assert_allclose(fa.communalities_, communalities, atol=1e-2)
 
 
-@pytest.mark.parametrize("rotation", ["varimax", "promax"])
+@pytest.mark.parametrize("rotation", ["varimax", "oblimax"])
 def test_women_dataset(rotation):
-    df = pd.read_csv(r".\data\women_track_records.csv")
+    # TODO change paths to support multiple macos and windows
+    pth = os.path.join("data", "women_track_records.csv")
+    df = pd.read_csv(pth)
 
     # first column is the country, so we drop it
     df.drop(columns=["COUNTRY"], inplace=True)
@@ -53,6 +57,7 @@ def test_fit_using_corr_mtx(get_app_ex_loadings):
             [0.044, 0.067, 0.024, 0.983, 1],
         ]
     )
+    print(np.max(np.abs(R - np.eye(5)), axis=0))
     fa = FactorAnalysis(n_factors=2, is_corr_mtx=True)
     fa.feature_names_in_ = ["Milky", "Melting", "Artificial", "Fruity", "Refreshing"]
     fa.fit(R)
@@ -61,10 +66,25 @@ def test_fit_using_corr_mtx(get_app_ex_loadings):
     assert_allclose(fa.loadings_, loadings, atol=1e-2)
 
 
+def test_optimal_corr_mtx():
+    R = [
+        [1, 1, 0, 0, 0.05],
+        [1, 1, 0, 0.05, 0.05],
+        [0.05, 0.05, 1, 1, 0.9],
+        [0.05, 0, 1, 1, 0.9],
+        [0, 0.05, 0.9, 0.9, 1],
+    ]
+    fa = FactorAnalysis(n_factors=2, is_corr_mtx=True, method="paf", use_smc=False).fit(
+        R
+    )
+    fa.print_summary()
+
+
 @pytest.mark.parametrize("n_factors", [1, 2, 3, 4])
 @pytest.mark.skip("no assertions")
 def test_coastal_waves(n_factors):
-    df = pd.read_csv(r".\data\coastal_waves_data.csv", sep=",")
+    pth = os.path.join("data", "coastal_waves_data.csv")
+    df = pd.read_csv(pth, sep=",")
     df.replace(-99.90, np.nan, inplace=True)
     df.drop("Date/Time", axis=1, inplace=True)
     df.dropna(inplace=True)
@@ -77,9 +97,8 @@ def test_coastal_waves(n_factors):
 @pytest.fixture(scope="session")
 def get_app_ex_data():
     # Table 7.2 on p.387, Backhaus Multivariate Analysis
-    data = pd.read_csv(
-        r".\data\application_example_backhaus_2021.CSV", sep=";", header=None
-    )
+    pth = os.path.join("data", "application_example_backhaus_2021.csv")
+    data = pd.read_csv(pth, sep=";", header=None)
     return data
 
 
