@@ -170,7 +170,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         """
-        Computes the factors scores using the regression method.
+        Computes the factors scores using Thompson's regression method.
 
         Parameters
         ----------
@@ -186,12 +186,25 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
         X = check_array(X, copy=True)
         Z, *_ = standardize(X)
-        inv_corr = np.linalg.inv(np.cov(Z, rowvar=False))
 
-        F = np.linalg.multi_dot([Z, inv_corr, self.loadings_])
+        try:
+            inv_l_transpose_l = np.linalg.inv(self.loadings_.T.dot(self.loadings_))
+            F = np.linalg.multi_dot([Z, self.loadings_, inv_l_transpose_l])
+        except LinAlgError:
+            # Regression method
+            inv_corr = np.linalg.inv(np.cov(Z, rowvar=False))
+            F = np.linalg.multi_dot([Z, inv_corr, self.loadings_])
         return F
 
     def _fit_principal_axis(self, start_estimate):
+        """
+        Fits the factor model using the principal axis method.
+
+        This method replaces the diagonal of the correlation matrix
+        with the given start estimate and performs a iterated
+        eigenvalue decomposition until a convergence criterion
+        or the maximum number of iterations is reached.
+        """
         corr = self.corr_.copy()
 
         # replace the diagonal "ones" with the initial estimate of the communalities
@@ -267,8 +280,8 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
         Returns
         -------
-        cov : array_like, shape (n_features, n_features)
-            The model covariance matrix
+        corr : array_like, shape (n_features, n_features)
+            The reproduced correlation matrix.
         """
         return np.dot(self.loadings_, self.loadings_.T) + np.diag(
             self.specific_variances_
