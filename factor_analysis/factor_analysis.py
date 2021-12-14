@@ -46,6 +46,12 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
     use_smc : bool, default=True
         If true, use squared multiple correlations as initial estimate
         for the communalities.
+    heywood_handling : str, default='continue'
+        Change the behavior in PAF, when a Heywood case is encountered.
+        If `heywood_handling` is set to 'continue', then the communalities
+        that are greater or equal to 1.0 are set to .99 and iteration will
+        continue. Otherwise, if `heywood_handling` is set to 'stop', iteration
+        will stop and the calculated laodings should be discarded.
 
     Attributes
     ----------
@@ -84,6 +90,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         max_iter=50,
         is_corr_mtx=False,
         use_smc=True,
+        heywood_handling="continue",
     ):
         self.n_factors = n_factors
         self.method = method
@@ -91,6 +98,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         self.max_iter = max_iter
         self.is_corr_mtx = is_corr_mtx
         self.use_smc = use_smc
+        self.heywood_handling = heywood_handling
 
     def fit(self, X, y=None):
         """
@@ -236,9 +244,20 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             # the new estimate for the communalities is the sum of squares over
             # each row in the loading matrix
             comm = np.sum(loadings ** 2, axis=1)
-
-            # strip Heywood cases to 1.0 and continue iterating
-            comm = np.where(comm > 1.0, 1.0, comm)
+            if np.any(comm >= 1):
+                if self.heywood_handling == "continue":
+                    # strip Heywood cases to .999 before iteration continues
+                    comm = np.where(comm >= 1.0, 0.999, comm)
+                else:
+                    warnings.warn(
+                        f"Heywood Case in Iteration {i} found. "
+                        "Based on the parameter 'heywood_handling' "
+                        "the iteration stopped. Try again with "
+                        "either heywood_handling='continue' or "
+                        f"with max_iter={i - 1}."
+                    )
+                    self.n_iter_ = i
+                    break
 
             # update communalities in the correlation matrix
             np.fill_diagonal(corr, comm)
@@ -250,8 +269,8 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         else:
             self.n_iter_ = self.max_iter
             warnings.warn(
-                "PAF algorithm did not converge. Consider increasing the `max_iter`"
-                "parameter",
+                "PAF algorithm did not converge. Consider increasing "
+                "the `max_iter` parameter",
                 ConvergenceWarning,
             )
 
@@ -475,6 +494,8 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
                 f"Method {self.method} is currently not supported."
                 f"It has to be one of {POSSIBLE_METHODS}."
             )
+        if self.heywood_handling not in ["continue", "stop"]:
+            raise ValueError("heywood_handling must be either 'continue' or 'stop'.")
         if self.max_iter < 1:
             raise ValueError(
                 f"max_iter has to be an integer greater or equal to 1, "
