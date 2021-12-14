@@ -35,8 +35,7 @@ def test_book_example_two_factors(get_app_ex_data, get_app_ex_loadings):
 
 @pytest.mark.parametrize("rotation", ["varimax", "oblimax"])
 def test_women_dataset(rotation):
-    # TODO change paths to support multiple macos and windows
-    pth = os.path.join("data", "women_track_records.csv")
+    pth = os.path.join(os.getcwd(), "data", "women_track_records.csv")
     df = pd.read_csv(pth)
 
     # first column is the country, so we drop it
@@ -61,7 +60,6 @@ def test_fit_using_corr_mtx(get_app_ex_loadings):
     fa = FactorAnalysis(n_factors=2, is_corr_mtx=True)
     fa.feature_names_in_ = ["Milky", "Melting", "Artificial", "Fruity", "Refreshing"]
     fa.fit(R)
-    # fa.summary()
 
     assert_allclose(fa.loadings_, loadings, atol=1e-2)
 
@@ -83,7 +81,7 @@ def test_optimal_corr_mtx():
 @pytest.mark.parametrize("n_factors", [1, 2, 3, 4])
 @pytest.mark.skip("no assertions")
 def test_coastal_waves(n_factors):
-    pth = os.path.join("data", "coastal_waves_data.csv")
+    pth = os.path.join(os.getcwd(), "data", "coastal_waves_data.csv")
     df = pd.read_csv(pth, sep=",")
     df.replace(-99.90, np.nan, inplace=True)
     df.drop("Date/Time", axis=1, inplace=True)
@@ -97,7 +95,7 @@ def test_coastal_waves(n_factors):
 @pytest.fixture(scope="session")
 def get_app_ex_data():
     # Table 7.2 on p.387, Backhaus Multivariate Analysis
-    pth = os.path.join("data", "application_example_backhaus_2021.csv")
+    pth = os.path.join(os.getcwd(), "data", "application_example_backhaus_2021.csv")
     data = pd.read_csv(pth, sep=";", header=None)
     return data
 
