@@ -417,16 +417,32 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
     def get_rmse(self):
         """
-        Root mean squared error of residuals.
-
-        Here the residual matrix is defined as the difference between the
-        empirical and the reproduced correlation matrix.
+        Calculate the root mean squared error of residuals, which is defined as
+        the square root of the sum of squared deviations of the empirical
+        correlation matrix and the reproduced correlation matrix.
+        Because the diagonal elements are estimated exactly and the matrizes
+        are symmetric, only calculate the error for the upper- (or lower-)
+        triangular part of the matrizes.
+        Therefore the correction term t = p(p - 1) / 2, where p is the number of
+        features.
 
         Returns
         -------
-
+        rmse : float
+            The root mean squared error of residuals.
         """
-        return np.sqrt(np.mean((self.corr_ - self.get_reprod_corr()) ** 2))
+        R = self.corr_.copy()
+        R_hat = self.get_reprod_corr()
+        # 2 * t = number of off-diagonal elements
+        t = self.n_features_ * (self.n_features_ - 1) / 2
+
+        sum_of_squared_residuals = 0
+        # iterate over the upper-triangular part of both matrizes
+        # and calculate the sum of squared residuals
+        for i in range(1, self.n_features_):
+            for j in range(i + 1, self.n_features_):
+                sum_of_squared_residuals += (R[i][j] - R_hat[i][j]) ** 2
+        return np.sqrt(sum_of_squared_residuals / t)
 
     @staticmethod
     def calculate_kmo(X):
