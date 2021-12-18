@@ -293,18 +293,27 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
         self.loadings_ = np.dot(eigenvectors, np.diag(np.sqrt(eigenvalues)))
 
-    def get_reprod_corr(self):
+    def get_reprod_corr(self, reduced=False):
         """
         Returns the reproduced correlation matrix.
 
+        Parameters
+        ----------
+        reduced : bool, default=False
+            If reduced is set to True, then return the
+            reduced correlation matrix, i.e. the diagonal elements
+            of the model correlation matrix are the estimated
+            communalities.
+
         Returns
         -------
-        corr : array_like, shape (n_features, n_features)
+        reproduced_corr : array_like, shape (n_features, n_features)
             The reproduced correlation matrix.
         """
-        return np.dot(self.loadings_, self.loadings_.T) + np.diag(
-            self.specific_variances_
-        )
+        reproduced_corr = np.dot(self.loadings_, self.loadings_.T)
+        if not reduced:
+            reproduced_corr += np.diag(self.specific_variances_)
+        return reproduced_corr
 
     def print_summary(self, file=None, force_full_print=True, precision=4):
         """
