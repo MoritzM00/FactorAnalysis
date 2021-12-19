@@ -268,11 +268,11 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             old_sum = new_sum
         else:
             self.n_iter_ = self.max_iter
-            warnings.warn(
-                "PAF algorithm did not converge. Consider increasing "
-                "the `max_iter` parameter",
-                ConvergenceWarning,
-            )
+            if self.max_iter != 1:
+                warnings.warn(
+                    "PAF algorithm did not converge. Consider increasing the `max_iter` parameter",
+                    ConvergenceWarning,
+                )
 
         self.loadings_ = loadings
 
