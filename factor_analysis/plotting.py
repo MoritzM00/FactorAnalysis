@@ -1,4 +1,5 @@
 import numpy as np
+import seaborn as sns
 from matplotlib import pyplot as plt
 
 
@@ -79,4 +80,34 @@ def plot_loadings_heatmap(X, methods, figsize=(10, 8), fa_params=None):
         ax.set_xticklabels([f"Factor {i}" for i in range(1, fa.n_factors + 1)])
     fig.suptitle("Factorloadingsmatrix")
     plt.tight_layout()
+    plt.show()
+
+
+def plot_corr_heatmap(X, triangular=True, is_corr_mtx=False):
+    """
+    Plots the correlation matrix of `X` as a heatmap.
+
+    Parameters
+    ----------
+    X : array_like, shape (n_samples, n_features) or (n_features, n_features)
+        The samples from which the correlation matrix is calculated or
+        the correlation matrix itself if `is_corr_mtx=True`
+    triangular : bool, default=True
+        If True, then only plot the lower-triangular part of the correlation
+        matrix.
+
+    is_corr_mtx : bool, default=False
+        If set to True, then X is treated as a correlation matrix.
+
+    Returns
+    -------
+    None
+    """
+    if not is_corr_mtx:
+        corr = X.corr()
+    else:
+        corr = X
+    mask = np.ones_like(corr)
+    mask = np.triu(mask) if triangular else mask
+    sns.heatmap(data=corr, vmax=1, vmin=-1, cmap="RdBu", mask=mask)
     plt.show()
