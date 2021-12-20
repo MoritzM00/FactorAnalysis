@@ -48,27 +48,3 @@ def standardize(X):
     Z = (X - mean) / std
 
     return Z, mean, std
-
-
-def scree_plot(eigenvalues, axes):
-    """
-    Plots the scree plot of the eigenvalues onto the given axes
-
-    Parameters
-    ----------
-    eigenvalues : array_like
-        The eigenvalues to plot.
-    axes : matplotlib.axes.Axes
-        The Axes to plot onto.
-
-    Returns
-    -------
-    None
-
-    """
-    x = np.arange(len(eigenvalues)) + 1
-    axes.plot(x, eigenvalues, "bo-", linewidth=2)
-    axes.axhline(1, c="g")
-    axes.set_title("Scree Plot")
-    axes.set_xlabel("Factor")
-    axes.set_ylabel("Eigenvalue")
