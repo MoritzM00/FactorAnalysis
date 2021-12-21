@@ -4,9 +4,9 @@ Exploratory Factor Analysis.
 
 import warnings
 
-import factor_analyzer as factanal
 import numpy as np
 import pandas as pd
+from factor_analyzer import Rotator
 from factor_analyzer.rotator import ORTHOGONAL_ROTATIONS
 from numpy.linalg import LinAlgError
 from sklearn import set_config
@@ -164,9 +164,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         self.var_explained_ = self.eigenvalues_ / self.n_features_
 
         if self.rotation is not None:
-            self.loadings_ = factanal.Rotator(method=self.rotation).fit_transform(
-                self.loadings_
-            )
+            self.loadings_ = Rotator(method=self.rotation).fit_transform(self.loadings_)
 
         if self.n_factors > 1:
             # update loading signs to match column sums
@@ -452,50 +450,6 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             for j in range(i + 1, self.n_features_):
                 sum_of_squared_residuals += (R[i][j] - R_hat[i][j]) ** 2
         return np.sqrt(sum_of_squared_residuals / t)
-
-    @staticmethod
-    def calculate_kmo(X):
-        """
-        Calculates the KMO score for each variable and the overall KMO score.
-
-        TODO: more explanation
-
-        Parameters
-        ----------
-        X : array_like, shape (n_samples, n_features)
-            The data on which the score is calculated.
-
-        Returns
-        -------
-        (ndarray, float)
-            The KMO score for each variable and the overall KMO score.
-        """
-        return factanal.calculate_kmo(X)
-
-    @staticmethod
-    def calculate_bartlett_sphericity(X):
-        """
-        Calculates the Bartlett Sphericity hypothesis test.
-
-        H0: The variables in the sample are uncorrelated.
-        H1: The variables in the sample are correlated.
-
-        If the variables are uncorrelated, the correlation matrix of
-        the data equals an identity matrix. Therefore, if this test cannot be
-        rejected, the data is likely unsuitable for Factor Analysis.
-
-        Parameters
-        ----------
-        X : array_like, shape (n_samples, n_features)
-            Samples.
-
-        Returns
-        -------
-        chi2_value, p_value : float, float
-            The chi2 value and the p-value of the test.
-
-        """
-        return factanal.calculate_bartlett_sphericity(X)
 
     def _validate_input(self, X):
         """
