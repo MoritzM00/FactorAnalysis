@@ -65,7 +65,7 @@ def plot_loadings_heatmap(X, methods, figsize=(10, 8), fa_params=None):
         fa.set_params(**fa_params)
         fa.fit(X)
         feature_names = getattr(
-            fa, "feature_names_in_", [f"X{i}" for i in range(1, X.shape[1])]
+            fa, "feature_names_in_", [f"X{i}" for i in range(1, X.shape[1] + 1)]
         )
         loadings = fa.loadings_
         vmax = np.abs(loadings).max()

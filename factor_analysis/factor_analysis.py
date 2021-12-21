@@ -341,13 +341,6 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             of the dataframe is too big.
         precision : int, default=4
             Can be used to specify the precision for printing floats.
-
-        Returns
-        -------
-        df : DataFrame
-            Summary of loadings, communalities and specific variances
-        factor_info : DataFrame
-            Summary of informations for factors.
         """
         check_is_fitted(self)
         factors = [
@@ -420,7 +413,6 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             if self.method == "paf" and self.max_iter > 1:
                 my_print(f"Number of iterations: {self.n_iter_}")
             my_print(f"Root mean squared error of residuals: {self.get_rmse():.4f}")
-        return df, factor_info
 
     def get_rmse(self):
         """
