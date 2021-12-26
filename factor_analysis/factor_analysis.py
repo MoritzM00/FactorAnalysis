@@ -193,13 +193,9 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         X = check_array(X, copy=True)
         Z, *_ = standardize(X)
 
-        try:
-            inv_l_transpose_l = np.linalg.inv(self.loadings_.T.dot(self.loadings_))
-            F = np.linalg.multi_dot([Z, self.loadings_, inv_l_transpose_l])
-        except LinAlgError:
-            # Regression method
-            inv_corr = np.linalg.inv(np.cov(Z, rowvar=False))
-            F = np.linalg.multi_dot([Z, inv_corr, self.loadings_])
+        # Regression method
+        inv_corr = np.linalg.inv(np.cov(Z, rowvar=False))
+        F = np.linalg.multi_dot([Z, inv_corr, self.loadings_])
         return F
 
     def _fit_principal_axis(self, start_estimate):
