@@ -83,7 +83,7 @@ def plot_loadings_heatmap(X, methods, figsize=(10, 8), fa_params=None):
     plt.show()
 
 
-def plot_corr_heatmap(X, triangular=True, is_corr_mtx=False):
+def plot_corr_heatmap(X, triangular=False, is_corr_mtx=False):
     """
     Plots the correlation matrix of `X` as a heatmap.
 
@@ -92,7 +92,7 @@ def plot_corr_heatmap(X, triangular=True, is_corr_mtx=False):
     X : array_like, shape (n_samples, n_features) or (n_features, n_features)
         The samples from which the correlation matrix is calculated or
         the correlation matrix itself if `is_corr_mtx=True`
-    triangular : bool, default=True
+    triangular : bool, default=False
         If True, then only plot the lower-triangular part of the correlation
         matrix.
 
@@ -107,7 +107,10 @@ def plot_corr_heatmap(X, triangular=True, is_corr_mtx=False):
         corr = X.corr()
     else:
         corr = X
-    mask = np.ones_like(corr)
-    mask = np.triu(mask) if triangular else mask
-    sns.heatmap(data=corr, vmax=1, vmin=-1, cmap="RdBu", mask=mask)
+    if triangular:
+        mask = np.ones_like(corr)
+        mask = np.triu(mask)
+    else:
+        mask = np.zeros_like(corr)
+    sns.heatmap(data=corr, vmax=1, vmin=-1, cmap="RdBu_r", mask=mask)
     plt.show()
