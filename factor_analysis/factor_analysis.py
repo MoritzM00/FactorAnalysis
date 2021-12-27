@@ -64,9 +64,6 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         The specific variances for each variable. It is the part of the variance,
         that cannot be explained by the factors and is unique to each variable.
         Therefore it is also known as the 'uniqueness' of a variable.
-    complexities_ : ndarray, shape (n_features,)
-        Hoffmann's Complexity Index. It equals to 1 if a variable loads high
-        on only one factor and it equals 2 if a variable loads evenly on two factors.
     corr_ : ndarray, shape (n_features, n_features)
         The empirical correlation matrix of the data.
     eigenvalues_ : ndarray, shape (n_factors,)
@@ -153,9 +150,6 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         squared_loadings = self.loadings_ ** 2
         self.communalities_ = np.sum(squared_loadings, axis=1)
         self.specific_variances_ = 1 - self.communalities_
-        self.complexities_ = np.sum(squared_loadings, axis=1) ** 2 / np.sum(
-            squared_loadings ** 2, axis=1
-        )
 
         # the eigenvalue of a factor is the sum of the squared loadings
         # in each column
@@ -343,7 +337,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             f"{'R' if self.rotation is not None else ''}F{i}"
             for i in range(1, self.n_factors + 1)
         ]
-        column_names = factors + ["Communality", "Specific Variance", "Complexity"]
+        column_names = factors + ["Communality", "Specific Variance"]
         if hasattr(self, "feature_names_in_"):
             idx = self.feature_names_in_
         else:
@@ -354,7 +348,6 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
                     self.loadings_,
                     self.communalities_.reshape(-1, 1),
                     self.specific_variances_.reshape(-1, 1),
-                    self.complexities_.reshape(-1, 1),
                 ),
                 axis=1,
             ),
