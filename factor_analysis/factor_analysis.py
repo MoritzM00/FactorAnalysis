@@ -504,7 +504,14 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
                     f"one of {self.INITIAL_COMMUNALITY_ESTIMATES}"
                 )
         else:
-            self.initial_comm = np.array(self.initial_comm)
+            self.initial_comm = check_array(
+                self.initial_comm, copy=True, ensure_2d=False
+            )
+            if len(self.initial_comm) != X.shape[1]:
+                raise ValueError(
+                    "Initial communality estimate has to be a 1D-array of "
+                    f"length {X.shape[1]} but got length {len(self.initial_comm)} instead."
+                )
             if not (0 < self.initial_comm <= 1).all():
                 raise ValueError(
                     "Initial communality estimates must be"
