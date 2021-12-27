@@ -1,3 +1,4 @@
+import matplotlib
 import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
@@ -26,10 +27,15 @@ def scree_plot(eigenvalues, axes):
     axes.set_ylabel("Eigenvalue")
 
 
-def plot_loadings_heatmap(X, methods, figsize=(10, 8), fa_params=None):
+def plot_loadings_heatmap(X, methods, figsize=(10, 8), fa_params=None, annotate=True):
     """
     Plot the loadings heatmap of multiple unfitted FactorAnalysis instances.
     The Instances will be fitted using the data `X`.
+
+    Red Values indicate large positive loadings and blue indicate large
+    negative values. Since there is no colorbar, if you want This
+    to show up in the plot, use the `annotate` keyword argument to
+    display the values of the loadings in the heatmap.
 
     This is useful for comparing different variants of factor analysis models for
     different parameters. The n_factors parameter has to be set, other parameters
@@ -50,6 +56,9 @@ def plot_loadings_heatmap(X, methods, figsize=(10, 8), fa_params=None):
         The size of the figure.
     fa_params : dict
         This is used to batch-set the parameters of the factor analysis instances.
+    annotate : bool, default=True
+        If True, then annotate the heatmap with the corresponding
+        values of the loading matrix.
 
     Returns
     -------
@@ -69,7 +78,8 @@ def plot_loadings_heatmap(X, methods, figsize=(10, 8), fa_params=None):
         )
         loadings = fa.loadings_
         vmax = np.abs(loadings).max()
-        ax.imshow(loadings, cmap="RdBu_r", vmax=vmax, vmin=-vmax)
+        im = ax.imshow(loadings, cmap="RdBu_r", vmax=vmax, vmin=-vmax)
+        annotate_heatmap(im, valfmt="{x:.2f}")
         ax.set_yticks(np.arange(len(feature_names)))
         if ax.get_subplotspec().is_first_col():
             ax.set_yticklabels(feature_names)
@@ -77,7 +87,9 @@ def plot_loadings_heatmap(X, methods, figsize=(10, 8), fa_params=None):
             ax.set_yticklabels([])
         ax.set_title(str(method))
         ax.set_xticks(range(fa.n_factors))
-        ax.set_xticklabels([f"Factor {i}" for i in range(1, fa.n_factors + 1)])
+        ax.set_xticklabels(
+            [f"Factor {i}" for i in range(1, fa.n_factors + 1)], rotation=45
+        )
     fig.suptitle("Factorloadingsmatrix")
     plt.tight_layout()
     plt.show()
@@ -114,3 +126,69 @@ def plot_corr_heatmap(X, triangular=False, is_corr_mtx=False):
         mask = np.zeros_like(corr)
     sns.heatmap(data=corr, vmax=1, vmin=-1, cmap="RdBu_r", mask=mask)
     plt.show()
+
+
+def annotate_heatmap(
+    im,
+    data=None,
+    valfmt="{x:.2f}",
+    textcolors=("black", "white"),
+    threshold=None,
+    **textkw,
+):
+    """
+    A function to annotate a heatmap.
+
+    Note: This function has been copied from
+    https://matplotlib.org/stable/gallery/images_contours_and_fields/image_annotated_heatmap.html
+
+    Parameters
+    ----------
+    im
+        The AxesImage to be labeled.
+    data
+        Data used to annotate.  If None, the image's data is used.  Optional.
+    valfmt
+        The format of the annotations inside the heatmap.  This should either
+        use the string format method, e.g. "$ {x:.2f}", or be a
+        `matplotlib.ticker.Formatter`.  Optional.
+    textcolors
+        A pair of colors.  The first is used for values below a threshold,
+        the second for those above.  Optional.
+    threshold
+        Value in data units according to which the colors from textcolors are
+        applied.  If None (the default) uses the middle of the colormap as
+        separation.  Optional.
+    **kwargs
+        All other arguments are forwarded to each call to `text` used to create
+        the text labels.
+    """
+
+    if not isinstance(data, (list, np.ndarray)):
+        data = im.get_array()
+
+    # Normalize the threshold to the images color range.
+    if threshold is not None:
+        threshold = im.norm(threshold)
+    else:
+        threshold = im.norm(data.max()) / 2.0
+
+    # Set default alignment to center, but allow it to be
+    # overwritten by textkw.
+    kw = dict(horizontalalignment="center", verticalalignment="center")
+    kw.update(textkw)
+
+    # Get the formatter in case a string is supplied
+    if isinstance(valfmt, str):
+        valfmt = matplotlib.ticker.StrMethodFormatter(valfmt)
+
+    # Loop over the data and create a `Text` for each "pixel".
+    # Change the text's color depending on the data.
+    texts = []
+    for i in range(data.shape[0]):
+        for j in range(data.shape[1]):
+            kw.update(color=textcolors[int(im.norm(data[i, j]) > threshold)])
+            text = im.axes.text(j, i, valfmt(data[i, j], None), **kw)
+            texts.append(text)
+
+    return texts
