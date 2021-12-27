@@ -442,7 +442,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
                         "SMCs cannot be computed due to "
                         "the correlation matrix being singular. "
                         "Use a different initial communality"
-                        "estimate."
+                        " estimate."
                     )
             elif self.initial_comm == self.INITIAL_COMMUNALITY_ESTIMATES[1]:
                 start = np.max(np.abs(self.corr_ - np.eye(self.n_features_)), axis=0)
@@ -454,6 +454,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
     POSSIBLE_METHODS = ["paf", "pc"]
     INITIAL_COMMUNALITY_ESTIMATES = ["smc", "mac", "ones"]
+    POSSIBLE_HEYWOOD_HANDLING = ["stop", "continue"]
 
     def _validate_input(self, X):
         """
@@ -468,17 +469,16 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
         X = check_array(X, copy=True)
 
-        if self.method is None or not isinstance(self.method, str):
-            raise ValueError(f"Unsupported method specified: {self.method}")
         self.method = self.method.lower()
         if self.method not in self.POSSIBLE_METHODS:
             raise ValueError(
-                f"Method {self.method} is currently not supported."
+                f"Method {self.method} is currently not supported. "
                 f"It has to be one of {self.POSSIBLE_METHODS}."
             )
-        if self.heywood_handling not in ["continue", "stop"]:
+        self.heywood_handling = self.heywood_handling.lower()
+        if self.heywood_handling not in self.POSSIBLE_HEYWOOD_HANDLING:
             raise ValueError("heywood_handling must be either 'continue' or 'stop'.")
-        if self.max_iter < 1:
+        if not isinstance(self.max_iter, int) or self.max_iter < 1:
             raise ValueError(
                 f"max_iter has to be an integer greater or equal to 1, "
                 f"but got {self.max_iter} instead."
@@ -499,7 +499,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             if self.initial_comm not in self.INITIAL_COMMUNALITY_ESTIMATES:
                 raise ValueError(
                     "Got an unexpected value for "
-                    "the initial communality estimate."
+                    "the initial communality estimate. "
                     "It has to be a valid array or "
                     f"one of {self.INITIAL_COMMUNALITY_ESTIMATES}"
                 )
@@ -512,7 +512,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
                     "Initial communality estimate has to be a 1D-array of "
                     f"length {X.shape[1]} but got length {len(self.initial_comm)} instead."
                 )
-            if not (0 < self.initial_comm <= 1).all():
+            if (self.initial_comm <= 0).any() or (self.initial_comm > 1).any():
                 raise ValueError(
                     "Initial communality estimates must be"
                     " between 0 and 1, but got "
