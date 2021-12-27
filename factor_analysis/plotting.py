@@ -79,7 +79,8 @@ def plot_loadings_heatmap(X, methods, figsize=(10, 8), fa_params=None, annotate=
         loadings = fa.loadings_
         vmax = np.abs(loadings).max()
         im = ax.imshow(loadings, cmap="RdBu_r", vmax=vmax, vmin=-vmax)
-        annotate_heatmap(im, valfmt="{x:.2f}")
+        if annotate:
+            annotate_heatmap(im, valfmt="{x:.2f}", threshold=0.2)
         ax.set_yticks(np.arange(len(feature_names)))
         if ax.get_subplotspec().is_first_col():
             ax.set_yticklabels(feature_names)
@@ -90,7 +91,7 @@ def plot_loadings_heatmap(X, methods, figsize=(10, 8), fa_params=None, annotate=
         ax.set_xticklabels(
             [f"Factor {i}" for i in range(1, fa.n_factors + 1)], rotation=45
         )
-    fig.suptitle("Factorloadingsmatrix")
+    fig.suptitle("Loadings-matrix")
     plt.tight_layout()
     plt.show()
 
@@ -139,7 +140,7 @@ def annotate_heatmap(
     """
     A function to annotate a heatmap.
 
-    Note: This function has been copied from
+    Note: This function has been copied (with a minor modification) from
     https://matplotlib.org/stable/gallery/images_contours_and_fields/image_annotated_heatmap.html
 
     Parameters
@@ -187,7 +188,7 @@ def annotate_heatmap(
     texts = []
     for i in range(data.shape[0]):
         for j in range(data.shape[1]):
-            kw.update(color=textcolors[int(im.norm(data[i, j]) > threshold)])
+            kw.update(color=textcolors[int(im.norm(np.abs(data[i, j])) > threshold)])
             text = im.axes.text(j, i, valfmt(data[i, j], None), **kw)
             texts.append(text)
 
