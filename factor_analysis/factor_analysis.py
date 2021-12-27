@@ -433,21 +433,21 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         Returns the initial communality estimate for the
         PAF-algorithm.
         """
-        if self.initial_comm == self.INITIAL_COMMUNALITY_ESTIMATES[0]:
-            try:
-                start = smc(self.corr_)
-            except LinAlgError:
-                # use maximum absolute correlation in each row
-                raise ValueError(
-                    "SMCs cannot be computed due to "
-                    "the correlation matrix being singular. "
-                    "Use a different initial communality"
-                    "estimate."
-                )
-        elif self.initial_comm == self.INITIAL_COMMUNALITY_ESTIMATES[1]:
-            start = np.max(np.abs(self.corr_ - np.eye(self.n_features_)), axis=0)
-        elif self.initial_comm == self.INITIAL_COMMUNALITY_ESTIMATES[2]:
-            start = np.repeat(1, self.n_features_)
+        if isinstance(self.initial_comm, str):
+            if self.initial_comm == self.INITIAL_COMMUNALITY_ESTIMATES[0]:
+                try:
+                    start = smc(self.corr_)
+                except LinAlgError:
+                    raise ValueError(
+                        "SMCs cannot be computed due to "
+                        "the correlation matrix being singular. "
+                        "Use a different initial communality"
+                        "estimate."
+                    )
+            elif self.initial_comm == self.INITIAL_COMMUNALITY_ESTIMATES[1]:
+                start = np.max(np.abs(self.corr_ - np.eye(self.n_features_)), axis=0)
+            else:
+                start = np.repeat(1, self.n_features_)
         else:
             start = self.initial_comm
         return start
