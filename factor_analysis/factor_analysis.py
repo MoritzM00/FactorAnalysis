@@ -430,10 +430,10 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
     def _get_start_estimate(self):
         """
-        Returns the initial communality esimate for the
+        Returns the initial communality estimate for the
         PAF-algorithm.
         """
-        if self.initial_comm == "smc":
+        if self.initial_comm == self.INITIAL_COMMUNALITY_ESTIMATES[0]:
             try:
                 start = smc(self.corr_)
             except LinAlgError:
@@ -444,13 +444,16 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
                     "Use a different initial communality"
                     "estimate."
                 )
-        elif self.initial_comm == "mac":
+        elif self.initial_comm == self.INITIAL_COMMUNALITY_ESTIMATES[1]:
             start = np.max(np.abs(self.corr_ - np.eye(self.n_features_)), axis=0)
-        elif self.initial_comm == "ones":
+        elif self.initial_comm == self.INITIAL_COMMUNALITY_ESTIMATES[2]:
             start = np.repeat(1, self.n_features_)
         else:
             start = self.initial_comm
         return start
+
+    POSSIBLE_METHODS = ["paf", "pc"]
+    INITIAL_COMMUNALITY_ESTIMATES = ["smc", "mac", "ones"]
 
     def _validate_input(self, X):
         """
@@ -465,16 +468,13 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
         X = check_array(X, copy=True)
 
-        POSSIBLE_METHODS = ["paf", "pc"]
-        INITIAL_COMMUNALITY_ESTIMATES = ["smc", "mac", "ones"]
-
         if self.method is None or not isinstance(self.method, str):
             raise ValueError(f"Unsupported method specified: {self.method}")
         self.method = self.method.lower()
-        if self.method not in POSSIBLE_METHODS:
+        if self.method not in self.POSSIBLE_METHODS:
             raise ValueError(
                 f"Method {self.method} is currently not supported."
-                f"It has to be one of {POSSIBLE_METHODS}."
+                f"It has to be one of {self.POSSIBLE_METHODS}."
             )
         if self.heywood_handling not in ["continue", "stop"]:
             raise ValueError("heywood_handling must be either 'continue' or 'stop'.")
@@ -496,12 +496,12 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             )
         if isinstance(self.initial_comm, str):
             self.initial_comm = self.initial_comm.lower()
-            if self.initial_comm not in INITIAL_COMMUNALITY_ESTIMATES:
+            if self.initial_comm not in self.INITIAL_COMMUNALITY_ESTIMATES:
                 raise ValueError(
                     "Got an unexpected value for "
                     "the initial communality estimate."
                     "It has to be a valid array or "
-                    f"one of {INITIAL_COMMUNALITY_ESTIMATES}"
+                    f"one of {self.INITIAL_COMMUNALITY_ESTIMATES}"
                 )
         else:
             self.initial_comm = np.array(self.initial_comm)
