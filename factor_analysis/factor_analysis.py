@@ -9,15 +9,12 @@ import pandas as pd
 from factor_analyzer import Rotator
 from factor_analyzer.rotator import ORTHOGONAL_ROTATIONS
 from numpy.linalg import LinAlgError
-from sklearn import set_config
+from sklearn import config_context
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.utils.validation import check_array, check_is_fitted
 
 from factor_analysis.utils import smc, standardize
-
-# print all parameters of the estimator
-set_config(print_changed_only=False)
 
 
 class FactorAnalysis(BaseEstimator, TransformerMixin):
@@ -390,7 +387,9 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
                 print(*args)
 
         with pd.option_context(*options):
-            my_print(f"Call fit on {self}")
+            # print all parameters of the estimator
+            with config_context(print_changed_only=False):
+                my_print(f"Call fit on {self}")
             my_print(
                 f"Number of samples: {self.n_samples_ if not self.is_corr_mtx else 'NA'}"
             )
