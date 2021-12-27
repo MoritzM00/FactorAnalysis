@@ -72,9 +72,9 @@ def test_optimal_corr_mtx():
         [0.05, 0, 1, 1, 0.9],
         [0, 0.05, 0.9, 0.9, 1],
     ]
-    fa = FactorAnalysis(n_factors=2, is_corr_mtx=True, method="paf", use_smc=False).fit(
-        R
-    )
+    fa = FactorAnalysis(
+        n_factors=2, is_corr_mtx=True, method="paf", initial_comm="ones"
+    ).fit(R)
     fa.print_summary()
 
 

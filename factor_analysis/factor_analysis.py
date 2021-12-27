@@ -40,9 +40,15 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         Set it to 1 if you do not want the iterated PAF.
     is_corr_mtx : bool, default=False
         If True, the passed data `X` is assumed to be the correlation matrix.
-    use_smc : bool, default=True
-        If true, use squared multiple correlations as initial estimate
-        for the communalities.
+    initial_comm : array_like of shape (n_features,) or str, default='smc'
+        Specifies the initial communality estimate used in the Principal
+        axis factoring method. If initial_comm == 'smc', then use
+        squared mulitple correlations (default), else if initial_comm == 'mac'
+        then use maximum absolute correlations in each row. Else if
+        initial_comm == 'ones' then use an array of ones as start-estimate.
+        If None of the above is true, then initial_comm must be an array of shape
+        (n_features,) that specifies a value for each feature, which has to be
+        in the interval ]0, 1].
     heywood_handling : str, default='continue'
         Change the behavior in PAF, when a Heywood case is encountered.
         If `heywood_handling` is set to 'continue', then the communalities
@@ -83,7 +89,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         rotation=None,
         max_iter=50,
         is_corr_mtx=False,
-        use_smc=True,
+        initial_comm="smc",
         heywood_handling="continue",
     ):
         self.n_factors = n_factors
@@ -91,7 +97,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         self.rotation = rotation
         self.max_iter = max_iter
         self.is_corr_mtx = is_corr_mtx
-        self.use_smc = use_smc
+        self.initial_comm = initial_comm
         self.heywood_handling = heywood_handling
 
     def fit(self, X, y=None):
@@ -126,21 +132,12 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             self.corr_ = corr.copy()
 
         if self.method == "paf":
-            if self.use_smc:
-                try:
-                    start = smc(self.corr_)
-                except LinAlgError:
-                    # use maximum absolute correlation in each row
-                    start = np.max(
-                        np.abs(self.corr_ - np.eye(self.n_features_)), axis=0
-                    )
-            else:
-                start = np.repeat(1, self.n_features_)
+            start = self._get_start_estimate()
             self._fit_principal_axis(start_estimate=start)
         else:
             self._fit_principal_component()
 
-        # calculate class attributes after fitting
+        # calculate instance attributes after fitting
 
         # sum of the squared loadings for each variable (each row)
         # are the final communalities
@@ -219,8 +216,8 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
             if np.any(eigenvalues < 0):
                 raise ValueError(
-                    "Fit using the PAF algorithm with SMC as starting value "
-                    "failed. Try again with `use_smc=False`."
+                    f"Fit using the PAF algorithm with {self.initial_comm} "
+                    "as starting value failed. Try again with `initial_comm='ones'`."
                 )
 
             # update the loadings
@@ -431,6 +428,30 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
                 sum_of_squared_residuals += (R[i][j] - R_hat[i][j]) ** 2
         return np.sqrt(sum_of_squared_residuals / t)
 
+    def _get_start_estimate(self):
+        """
+        Returns the initial communality esimate for the
+        PAF-algorithm.
+        """
+        if self.initial_comm == "smc":
+            try:
+                start = smc(self.corr_)
+            except LinAlgError:
+                # use maximum absolute correlation in each row
+                raise ValueError(
+                    "SMCs cannot be computed due to "
+                    "the correlation matrix being singular. "
+                    "Use a different initial communality"
+                    "estimate."
+                )
+        elif self.initial_comm == "mac":
+            start = np.max(np.abs(self.corr_ - np.eye(self.n_features_)), axis=0)
+        elif self.initial_comm == "ones":
+            start = np.repeat(1, self.n_features_)
+        else:
+            start = self.initial_comm
+        return start
+
     def _validate_input(self, X):
         """
         Validates the input for correct specification. Sets the feature_names_in_
@@ -444,10 +465,12 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
         X = check_array(X, copy=True)
 
+        POSSIBLE_METHODS = ["paf", "pc"]
+        INITIAL_COMMUNALITY_ESTIMATES = ["smc", "mac", "ones"]
+
         if self.method is None or not isinstance(self.method, str):
             raise ValueError(f"Unsupported method specified: {self.method}")
         self.method = self.method.lower()
-        POSSIBLE_METHODS = ["paf", "pc"]
         if self.method not in POSSIBLE_METHODS:
             raise ValueError(
                 f"Method {self.method} is currently not supported."
@@ -471,5 +494,22 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
                 f" or one of the following orthogonal rotations:"
                 f" {ORTHOGONAL_ROTATIONS}"
             )
+        if isinstance(self.initial_comm, str):
+            self.initial_comm = self.initial_comm.lower()
+            if self.initial_comm not in INITIAL_COMMUNALITY_ESTIMATES:
+                raise ValueError(
+                    "Got an unexpected value for "
+                    "the initial communality estimate."
+                    "It has to be a valid array or "
+                    f"one of {INITIAL_COMMUNALITY_ESTIMATES}"
+                )
+        else:
+            self.initial_comm = np.array(self.initial_comm)
+            if not (0 < self.initial_comm <= 1).all():
+                raise ValueError(
+                    "Initial communality estimates must be"
+                    " between 0 and 1, but got "
+                    f"{self.initial_comm} instead."
+                )
         self.rotation = self.rotation.lower() if self.rotation else None
         return X
