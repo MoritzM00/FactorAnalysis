@@ -423,7 +423,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         sum_of_squared_residuals = 0
         # iterate over the upper-triangular part of both matrizes
         # and calculate the sum of squared residuals
-        for i in range(1, self.n_features_):
+        for i in range(0, self.n_features_):
             for j in range(i + 1, self.n_features_):
                 sum_of_squared_residuals += (R[i][j] - R_hat[i][j]) ** 2
         return np.sqrt(sum_of_squared_residuals / t)
