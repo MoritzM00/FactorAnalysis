@@ -27,7 +27,9 @@ def scree_plot(eigenvalues, axes):
     axes.set_ylabel("Eigenvalue")
 
 
-def plot_loadings_heatmap(X, methods, figsize=(10, 8), fa_params=None, annotate=True):
+def plot_loadings_heatmap(
+    X, methods, figsize=(10, 8), fa_params=None, annotate=True, file=None
+):
     """
     Plot the loadings heatmap of multiple unfitted FactorAnalysis instances.
     The Instances will be fitted using the data `X`.
@@ -59,6 +61,8 @@ def plot_loadings_heatmap(X, methods, figsize=(10, 8), fa_params=None, annotate=
     annotate : bool, default=True
         If True, then annotate the heatmap with the corresponding
         values of the loading matrix.
+    file: Path or str or None, default=None
+        If file is not null, then save the figure to the specified file.
 
     Returns
     -------
@@ -93,10 +97,12 @@ def plot_loadings_heatmap(X, methods, figsize=(10, 8), fa_params=None, annotate=
         )
     fig.suptitle("Loadings-matrix")
     plt.tight_layout()
+    if file:
+        plt.savefig(file)
     plt.show()
 
 
-def plot_corr_heatmap(X, triangular=False, is_corr_mtx=False):
+def plot_corr_heatmap(X, triangular=False, is_corr_mtx=False, file=None):
     """
     Plots the correlation matrix of `X` as a heatmap.
 
@@ -108,9 +114,10 @@ def plot_corr_heatmap(X, triangular=False, is_corr_mtx=False):
     triangular : bool, default=False
         If True, then only plot the lower-triangular part of the correlation
         matrix.
-
     is_corr_mtx : bool, default=False
         If set to True, then X is treated as a correlation matrix.
+    file: Path or str or None, default=None
+        If file is not null, then save the figure to the specified file.
 
     Returns
     -------
@@ -126,6 +133,8 @@ def plot_corr_heatmap(X, triangular=False, is_corr_mtx=False):
     else:
         mask = np.zeros_like(corr)
     sns.heatmap(data=corr, vmax=1, vmin=-1, cmap="RdBu_r", mask=mask)
+    if file:
+        plt.savefig(file)
     plt.show()
 
 
