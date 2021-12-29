@@ -386,12 +386,13 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         with pd.option_context(*options):
             # print all parameters of the estimator
             with config_context(print_changed_only=False):
-                my_print(f"Call fit on {self}")
+                my_print(f"Fitted FactorAnalysis instance:\n{self}")
             my_print(
                 f"Number of samples: {self.n_samples_ if not self.is_corr_mtx else 'NA'}"
             )
             my_print(f"Number of features: {self.n_features_}")
-            my_print("Summary of estimated parameters: \n")
+            my_print("\nSummary of estimated parameters")
+            my_print("-------------------------------")
             my_print(df, "\n")
             if self.method == "pc":
                 my_print(factor_info, "\n")
