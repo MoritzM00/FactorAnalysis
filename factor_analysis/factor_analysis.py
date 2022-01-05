@@ -1,5 +1,7 @@
 """
 Exploratory Factor Analysis.
+
+Docstring style: NumPy
 """
 
 import warnings
@@ -21,7 +23,11 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
     """
     The linear factor analysis model.
 
-    TODO: docstring
+    This class implements principal component (PC) and principal axis
+    factoring (PAF) methods to fit a factor analysis model to the data.
+
+    The factor scores are computed via the ``transform``method, which uses
+    the regression method for estimation.
 
     Parameters
     ----------
@@ -43,7 +49,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
     initial_comm : array_like of shape (n_features,) or str, default='smc'
         Specifies the initial communality estimate used in the Principal
         axis factoring method. If initial_comm == 'smc', then use
-        squared mulitple correlations (default), else if initial_comm == 'mac'
+        squared multiple correlations (default), else if initial_comm == 'mac'
         then use maximum absolute correlations in each row. Else if
         initial_comm == 'ones' then use an array of ones as start-estimate.
         If None of the above is true, then initial_comm must be an array of shape
@@ -109,7 +115,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         X : array_like, shape (n_samples, n_features)
             Training data.
         y : ignored
-            Not used, only for API consistency
+            Not used, only for API consistency.
 
         Returns
         -------
@@ -156,7 +162,9 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
         if self.n_factors > 1:
             # update loading signs to match column sums
-            # this is to ensure that signs align with package factor_analyzer
+            # this is to ensure that signs align with other
+            # Factor Analysis packages like factor_analyzer (Python)
+            # or the fa function of the R psych package.
             signs = np.sign(self.loadings_.sum(0))
             signs[(signs == 0)] = 1
             self.loadings_ = np.dot(self.loadings_, np.diag(signs))
@@ -191,13 +199,14 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         Fits the factor model using the principal axis method.
 
         This method replaces the diagonal of the correlation matrix
-        with the given start estimate and performs a iterated
+        with the given start estimate and performs an iterated
         eigenvalue decomposition until a convergence criterion
         or the maximum number of iterations is reached.
         """
         corr = self.corr_.copy()
 
         # replace the diagonal "ones" with the initial estimate of the communalities
+        # to get the reduced correlation matrix R - Psi
         np.fill_diagonal(corr, start_estimate)
 
         old_sum = start_estimate.sum()
@@ -211,9 +220,12 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             eigenvalues, eigenvectors = np.linalg.eigh(corr)
 
             # sort the eigenvectors by eigenvalues from largest to smallest
+            # and only keep `n_factors`-Eigenvectors
             eigenvalues = eigenvalues[::-1][: self.n_factors]
             eigenvectors = eigenvectors[:, ::-1][:, : self.n_factors]
 
+            # since the reduced correlation matrix is not guaranteed to
+            # be positive semi-definite, we need to check for negative eigenvalues.
             if np.any(eigenvalues < 0):
                 raise ValueError(
                     f"Fit using the PAF algorithm with {self.initial_comm} "
@@ -241,7 +253,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
                     self.n_iter_ = i
                     break
 
-            # update communalities in the correlation matrix
+            # update communalities in the reduced correlation matrix
             np.fill_diagonal(corr, comm)
 
             # update error variables
@@ -261,7 +273,6 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
     def _fit_principal_component(self):
         """
         Fit the factor analysis model using the principal component method.
-        (Not principal component analysis)
 
         This is equivalent to using _fit_principal_axis with starting value 1 and
         max_iter = 1.
@@ -283,7 +294,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         ----------
         reduced : bool, default=False
             If reduced is set to True, then return the
-            reduced correlation matrix, i.e. the diagonal elements
+            reduced model correlation matrix, i.e. the diagonal elements
             of the model correlation matrix are the estimated
             communalities.
 
