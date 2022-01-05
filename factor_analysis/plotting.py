@@ -1,5 +1,6 @@
 import matplotlib
 import numpy as np
+import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
 
@@ -27,8 +28,8 @@ def scree_plot(eigenvalues, axes):
     axes.set_ylabel("Eigenvalue")
 
 
-def plot_loadings_heatmap(
-    X, methods, figsize=(10, 8), fa_params=None, annotate=True, file=None
+def create_loadings_heatmaps(
+    X, methods, figsize=(10, 8), fa_params=None, annotate=True
 ):
     """
     Plot the loadings heatmap of multiple unfitted FactorAnalysis instances.
@@ -61,12 +62,11 @@ def plot_loadings_heatmap(
     annotate : bool, default=True
         If True, then annotate the heatmap with the corresponding
         values of the loading matrix.
-    file: Path or str or None, default=None
-        If file is not null, then save the figure to the specified file.
 
     Returns
     -------
-    None
+    matplotlib.axes.Axes
+        The Axes object containing all heatmaps.
     """
     if fa_params is None:
         fa_params = {}
@@ -97,12 +97,10 @@ def plot_loadings_heatmap(
         )
     fig.suptitle("Loadings-matrix")
     plt.tight_layout()
-    if file:
-        plt.savefig(file)
-    plt.show()
+    return axes
 
 
-def plot_corr_heatmap(X, triangular=False, is_corr_mtx=False, file=None):
+def create_corr_heatmap(X, triangular=False, is_corr_mtx=False, annotate=True):
     """
     Plots the correlation matrix of `X` as a heatmap.
 
@@ -114,15 +112,17 @@ def plot_corr_heatmap(X, triangular=False, is_corr_mtx=False, file=None):
     triangular : bool, default=False
         If True, then only plot the lower-triangular part of the correlation
         matrix.
+    annotate: bool, default=True
+        If True, then annotate the heatmap with the corresponding correlations.
     is_corr_mtx : bool, default=False
         If set to True, then X is treated as a correlation matrix.
-    file: Path or str or None, default=None
-        If file is not null, then save the figure to the specified file.
 
     Returns
     -------
-    None
+    matplotlib.axes.Axes
+        The Axes object with the heatmap.
     """
+    X = pd.DataFrame(X)
     if not is_corr_mtx:
         corr = X.corr()
     else:
@@ -132,10 +132,10 @@ def plot_corr_heatmap(X, triangular=False, is_corr_mtx=False, file=None):
         mask = np.triu(mask)
     else:
         mask = np.zeros_like(corr)
-    sns.heatmap(data=corr, vmax=1, vmin=-1, cmap="RdBu_r", mask=mask)
-    if file:
-        plt.savefig(file)
-    plt.show()
+    hm = sns.heatmap(
+        data=corr, vmax=1, vmin=-1, cmap="RdBu_r", mask=mask, annot=annotate
+    )
+    return hm
 
 
 def annotate_heatmap(
