@@ -16,8 +16,8 @@ def test_book_example_two_factors(get_app_ex_data, get_app_ex_loadings):
     fa = FactorAnalysis(n_factors=2, is_corr_mtx=True).fit(corr)
     assert fa.loadings_.shape == (data.shape[1], 2)
 
-    assert_allclose(fa.loadings_, loadings, atol=1e-2)
-    assert_allclose(fa.communalities_, communalities, atol=1e-2)
+    assert_allclose(fa.loadings_, loadings, atol=1e-3)
+    assert_allclose(fa.communalities_, communalities, atol=1e-3)
 
 
 def test_fit_using_corr_mtx(get_app_ex_loadings):
@@ -32,12 +32,11 @@ def test_fit_using_corr_mtx(get_app_ex_loadings):
             [0.044, 0.067, 0.024, 0.983, 1],
         ]
     )
-    print(np.max(np.abs(R - np.eye(5)), axis=0))
     fa = FactorAnalysis(n_factors=2, is_corr_mtx=True)
     fa.feature_names_in_ = ["Milky", "Melting", "Artificial", "Fruity", "Refreshing"]
     fa.fit(R)
 
-    assert_allclose(fa.loadings_, loadings, atol=1e-2)
+    assert_allclose(fa.loadings_, loadings, atol=1e-3)
 
 
 @pytest.fixture(scope="session")
