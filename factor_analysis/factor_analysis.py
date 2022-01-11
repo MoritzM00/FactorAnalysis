@@ -26,7 +26,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
     This class implements principal component (PC) and principal axis
     factoring (PAF) methods to fit a factor analysis model to the data.
 
-    The factor scores are computed via the ``transform``method, which uses
+    The factor scores are computed via the `transform` method, which uses
     the regression method for estimation.
 
     Parameters
@@ -34,9 +34,9 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
     n_factors : int
         The number of factors.
     method : str, default='paf'
-        The fitting method. Currently (iterated) principal axis factoring and
+        The fitting method. Currently, (iterated) principal axis factoring and
         principal components method is implemented.
-        For PAF use method='paf'
+        For PAF use method='paf'.
         For Principal Comp. use method='pc'
     rotation : str, default=None
         Sets the factor rotation method. If you do not want to rotate the factors
@@ -50,9 +50,10 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         Specifies the initial communality estimate used in the Principal
         axis factoring method. If initial_comm == 'smc', then use
         squared multiple correlations (default), else if initial_comm == 'mac'
-        then use maximum absolute correlations in each row. Else if
+        then use maximum absolute correlations in each row of the
+        correlation matrix. Else if
         initial_comm == 'ones' then use an array of ones as start-estimate.
-        If None of the above is true, then initial_comm must be an array of shape
+        If none of the above is true, then initial_comm must be an array of shape
         (n_features,) that specifies a value for each feature, which has to be
         in the interval ]0, 1].
     heywood_handling : str, default='continue'
@@ -60,7 +61,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         If `heywood_handling` is set to 'continue', then the communalities
         that are greater or equal to 1.0 are set to .99 and iteration will
         continue. Otherwise, if `heywood_handling` is set to 'stop', iteration
-        will stop and the calculated laodings should be discarded.
+        will stop and the calculated loadings should be discarded.
 
     Attributes
     ----------
@@ -72,7 +73,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
     specific_variances_ : ndarray, shape (n_features,)
         The specific variances for each variable. It is the part of the variance,
         that cannot be explained by the factors and is unique to each variable.
-        Therefore it is also known as the 'uniqueness' of a variable.
+        Therefore, it is also known as the 'uniqueness' of a variable.
     corr_ : ndarray, shape (n_features, n_features)
         The empirical correlation matrix of the data.
     eigenvalues_ : ndarray, shape (n_factors,)
@@ -165,6 +166,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             # this is to ensure that signs align with other
             # Factor Analysis packages like factor_analyzer (Python)
             # or the fa function of the R psych package.
+            # (taken from factor_analyzer)
             signs = np.sign(self.loadings_.sum(0))
             signs[(signs == 0)] = 1
             self.loadings_ = np.dot(self.loadings_, np.diag(signs))
@@ -172,7 +174,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         """
-        Computes the factors scores using Thompson's regression method.
+        Computes the factors scores using the regression method.
 
         Parameters
         ----------
@@ -274,7 +276,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         """
         Fit the factor analysis model using the principal component method.
 
-        This is equivalent to using _fit_principal_axis with starting value 1 and
+        This is equivalent to using _fit_principal_axis with starting value `ones` and
         max_iter = 1.
         """
         corr = self.corr_.copy()
@@ -288,7 +290,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
     def get_reprod_corr(self, reduced=False):
         """
-        Returns the reproduced correlation matrix.
+        Returns the reproduced (model) correlation matrix.
 
         Parameters
         ----------
@@ -329,10 +331,11 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
             Optional. If specified, then the output is written to the
             given file. The user has to take care of opening and closing
             the file. Surround the 'print_summary(..., file=f)' statement with a
-            ``with open(file, 'a') as f:`` and then pass f as argument to this method.
+            `with open(file, 'a') as f:`
+             and then pass f as argument to this method.
         force_full_print : bool, default=True
             If True, then it prints the dataframes with no column or row
-            width limitations. Otherwise it will print dots if the width
+            width limitations. Otherwise, it will print dots if the width
             of the dataframe is too big.
         precision : int, default=4
             Can be used to specify the precision for printing floats.
@@ -386,7 +389,7 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
 
         # define custom print function, if the user wants to
         # write the output to a file
-        def my_print(*args):
+        def _print(*args):
             if file:
                 # write output to specified file
                 print(*args, file=file)
@@ -397,26 +400,26 @@ class FactorAnalysis(BaseEstimator, TransformerMixin):
         with pd.option_context(*options):
             # print all parameters of the estimator
             with config_context(print_changed_only=False):
-                my_print(f"Fitted FactorAnalysis instance:\n{self}")
-            my_print(
+                _print(f"Fitted FactorAnalysis instance:\n{self}")
+            _print(
                 f"Number of samples: {self.n_samples_ if not self.is_corr_mtx else 'NA'}"
             )
-            my_print(f"Number of features: {self.n_features_}")
-            my_print("\nSummary of estimated parameters")
-            my_print("-------------------------------")
-            my_print(df, "\n")
+            _print(f"Number of features: {self.n_features_}")
+            _print("\nSummary of estimated parameters")
+            _print("-------------------------------")
+            _print(df, "\n")
             if self.method == "pc":
-                my_print(factor_info, "\n")
+                _print(factor_info, "\n")
             if self.method == "paf" and self.max_iter > 1:
-                my_print(f"Number of iterations: {self.n_iter_}")
-            my_print(f"Root mean squared error of residuals: {self.get_rmse():.4f}")
+                _print(f"Number of iterations: {self.n_iter_}")
+            _print(f"Root mean squared error of residuals: {self.get_rmse():.4f}")
 
     def get_rmse(self):
         """
         Calculate the root mean squared error of residuals, which is defined as
         the square root of the sum of squared deviations of the empirical
         correlation matrix and the reproduced correlation matrix.
-        Because the diagonal elements are estimated exactly and the matrizes
+        Because the diagonal elements are estimated exactly and the matrices
         are symmetric, only calculate the error for the upper- (or lower-)
         triangular part of the matrizes.
         Therefore the correction term t = p(p - 1) / 2, where p is the number of
