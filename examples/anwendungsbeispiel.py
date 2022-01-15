@@ -13,7 +13,7 @@ from factor_analysis import FactorAnalysis
 from factor_analysis.plotting import create_loadings_heatmaps, scree_plot
 
 filterwarnings("ignore")
-np.set_printoptions(suppress=True, precision=8)
+np.set_printoptions(suppress=True, precision=4)
 pd.set_option("display.precision", 4)
 
 
@@ -27,7 +27,7 @@ pd.set_option("display.precision", 4)
 
 # ## Beschreibung der Daten
 
-# In[2]:
+# In[ ]:
 
 
 path = Path(getcwd(), "data", "cal_housing.data")
@@ -40,7 +40,7 @@ X.info()
 # Da wir für die Faktoranalyse auch metrisch skalierte Merkmale benötigen, haben wir in diesem
 # Bereich keine Probleme.
 
-# In[3]:
+# In[ ]:
 
 
 X.describe()
@@ -67,11 +67,11 @@ X.describe()
 #
 # Der Datensatz enthält keine fehlenden Werte, wie wir in der `pd.info` Methode sehen können.
 
-# ### Die Verteilung der Daten
+# ## Die Verteilung der Daten
 #
 # Nun schauen wir uns einige univariate und bivariate Plots der metrischen Merkmale an, um ein Gefühl für die Daten zu bekommen.
 
-# In[4]:
+# In[ ]:
 
 
 X.hist(figsize=(20, 15), bins=30)
@@ -87,7 +87,7 @@ plt.show()
 # ### Ausreißeranalyse
 # Bevor wir uns also bivariate Plots ansehen, werden wir mittels LocalOutlierFactor (LOF) versuchen, einige Ausreißer zu eliminieren.
 
-# In[5]:
+# In[ ]:
 
 
 labels = LocalOutlierFactor(n_neighbors=35).fit_predict(X)
@@ -99,7 +99,7 @@ print(
 )
 
 
-# In[6]:
+# In[ ]:
 
 
 X.describe()
@@ -109,7 +109,7 @@ X.describe()
 #
 # Schauen wir uns nun die Verteilungen der Merkmale mittels eines Pairplots genauer an.
 
-# In[30]:
+# In[ ]:
 
 
 sns.pairplot(X, diag_kind="kde", kind="scatter", plot_kws={"alpha": 0.3})
@@ -137,7 +137,7 @@ plt.show()
 #
 # Diese drei Gruppen sind unten noch einmal in gesonderten Pairplots dargestellt.
 
-# In[31]:
+# In[ ]:
 
 
 group1 = ["longitude", "latitude"]
@@ -145,16 +145,19 @@ group2 = ["total_rooms", "total_bedrooms", "population", "households"]
 group3 = ["median_income", "median_house_value"]
 
 
-# In[28]:
+# In[ ]:
 
 
 sns.pairplot(
-    X[group1], diag_kind="kde", kind="scatter", plot_kws={"alpha": 0.3}, size=4
+    X[group1], diag_kind="kde", kind="scatter", plot_kws={"alpha": 0.1}, size=4
 )
 plt.show()
 
 
-# In[10]:
+# Hier sieht man, dass sich sehr viele Bezirke in zwei Regionen befinden. Dies erklärt die bimodale Struktur der beiden Merkmale `longitude` und `latitude`.
+# Weiter unten befindet sich ein Scatter-Plot, der die geographische Verteilung der Bezirke noch genauer zeigt.
+
+# In[ ]:
 
 
 sns.pairplot(
@@ -163,7 +166,7 @@ sns.pairplot(
 plt.show()
 
 
-# In[29]:
+# In[ ]:
 
 
 sns.pairplot(
@@ -174,11 +177,13 @@ plt.show()
 
 # Im letzten Pairplot fällt auch wieder die horizontale (bzw. vertikale) Linie bei `median_house_value = 500 000` auf.
 
+# #### Geographische Verteilung der Häuserpreise
+#
 # Zudem können wir uns noch die graphische Verteilung der Häuserpreise ansehen.
 # Unten dargestellt ist ein Scatter-Plot, der die Lage der Bezirke in Abhängigkeit
 # des Medians der Häuserpreise berücksichtigt.
 
-# In[12]:
+# In[ ]:
 
 
 fig, ax = plt.subplots(figsize=(15, 10))
@@ -188,7 +193,7 @@ sc = ax.scatter(
     c="median_house_value",
     cmap="viridis",
     data=X,
-    alpha=0.5,
+    alpha=0.4,
 )
 plt.colorbar(sc, label="median_house_value")
 
@@ -223,7 +228,7 @@ plt.show()
 # Generell wollen wir, dass der KMO-Wert über 0.5 ist und der MSA-Wert für jede Variable ebenfalls 0.5 nicht
 # unterschreitet.
 
-# In[13]:
+# In[ ]:
 
 
 msa_values, kmo = calculate_kmo(X)
@@ -241,7 +246,7 @@ print(msa_df)
 # Man sollte sich zudem noch die Korrelationsmatrix direkt anschauen. Dies tun wir im Folgenden mit einer
 # Heatmap, da sie sich sehr gut als visuelle Repräsentation eignet.
 
-# In[14]:
+# In[ ]:
 
 
 fig = plt.figure(figsize=(10, 10))
@@ -267,13 +272,13 @@ plt.show()
 # Dann können wir die Faktoren behalten, die einen Eigenwert größer Eins (Kaiser-Kriterium) haben, oder anhand eines 'Knicks'
 # im Plot eine geeignete Faktorzahl erkennen.
 
-# In[15]:
+# In[ ]:
 
 
 fa = FactorAnalysis(n_factors=X.shape[1], method="pc").fit(X)
 
 
-# In[16]:
+# In[ ]:
 
 
 fig, ax = plt.subplots(figsize=(13, 8))
@@ -305,7 +310,7 @@ plt.show()
 #
 # Dabei ist die letzte Variante wohl die am häufigsten eingesetzte Methode (unter diesen drei).
 
-# In[17]:
+# In[ ]:
 
 
 methods = [
@@ -332,7 +337,7 @@ for n_factors in range(3, 6):
 #
 # Wir werden also die 3-Faktorlösung genauer betrachten.
 
-# In[18]:
+# In[ ]:
 
 
 fa_params = {"n_factors": 3}
@@ -346,28 +351,44 @@ plt.show()
 
 # Wir können sehen, dass bei der PC-Methode die Ladungen generell höher ausfallen und dass der zweite Faktor ein unterschiedliches
 # Vorzeichen besitzt, im Gegensatz zu den anderen beiden Methoden.
-#
+
 # Die iterierte und nicht-iterierte PAF-Methode sind sehr ähnlich zueinander. Jedoch ist die iterierte
 # Variante oft in Hinblick auf die reproduzierte Korrelationsmatrix besser. Dies können wir anhand des
 # *root mean squared error* (RMSE) untersuchen:
 
-# In[19]:
+# In[ ]:
 
 
 for method, fa in methods:
-    print(f"RMSE von {method}: {fa.get_rmse():.4f}")
     rmse = fa.get_rmse()
+    print(f"RMSE von {method}: {rmse:.4f}")
 
 
 # Der root mean squared error of residuals (RMSE) ist bei der iterierten PAF-Methode am geringsten,
 # gefolgt von der nicht-iterativen Variante und der Hauptkomponentenmethode.
+#
+# Schauen wir uns nun noch die Kommunalitäten der Variablen an. Dies zeigt uns zum Beispiel die `print_summary` Methode an:
 
+# In[ ]:
+
+
+# Zusammenfassung der iterierten PAF-Methode
+methods[2][1].print_summary()
+
+
+# Die spezifische Varianz von `housing_median_age` ist mit einem Wert von 0.8980 sehr hoch.
+# Das bedeutet, dass die Faktoren die Varianz dieses Merkmals gemeinsam nicht besonders gut erklären können.
+# Dies spiegelt sich ebenfalls in den geringen Ladungen auf die drei Faktoren wider.
+# Die spezifischen Varianzen bei den restlichen Merkmalen sind jedoch sehr niedrig,
+# was ein gutes Zeichen für die Qualität der Faktorlösung ist.
+#
+#
 # Da das Merkmal `housing_median_age` eine sehr hohe spezifische Varianz (geringe Kommunalität) aufweist
 # können wir auch ein 3-Faktor-Modell ohne diesem Merkmal anschauen.
 # Dieses kann den RMSE um knapp 44% reduzieren (im Vergleich sind die iterierten PAF-Methoden),
-# weshalb wir für dieses Merkmal für die weitere Analyse entfernen.
+# weshalb wir dieses Merkmal für die weitere Analyse entfernen.
 
-# In[20]:
+# In[ ]:
 
 
 X_without_age = X.drop(columns="housing_median_age", axis=1)
@@ -379,7 +400,7 @@ print(f"Der RMSE konnte durch Entfernen des Merkmals um {perc:.2%} reduziert wer
 #
 # Den Unterschied zwischen den Methoden im RMSE können wir auch noch grafisch analysieren:
 
-# In[21]:
+# In[ ]:
 
 
 fig, axes = plt.subplots(ncols=2, figsize=(12, 6))
@@ -409,32 +430,10 @@ fig.tight_layout()
 plt.show()
 
 
-# In[22]:
-
-
-# Zusammenfassung der iterierten PAF-Methode
-methods[2][1].print_summary()
-
-
-# In der Zusammenfassung können wir neben den Ladungen auch die Kommunalitäten und die spezifischen Varianzen
-# der Merkmale sehen.
-#
-#
-# Die spezifische Varianz von `housing_median_age` ist mit einem Wert von 0.90 sehr hoch.
-# Das bedeutet, dass die Faktoren die Varianz dieses Merkmals gemeinsam nicht besonders gut erklären können. Dies spiegelt sich ebenfalls in den
-#  geringen Ladungen auf die drei Faktoren wider.
-# Die spezifischen Varianzen bei den restlichen Merkmalen sind jedoch sehr niedrig,
-# was ein gutes Zeichen für die Qualität der Faktorlösung ist.
-#
-# Alle Merkmale können eindeutig einem Faktor durch jeweils die betraglich
-# größte Ladung zugeordnet werden. Dies ist nicht immer der Fall, sodass eine Faktorrotation für eine leichtere Interpretation
-# sorgen könnte. Hier ist jedoch auch ohne Rotation eine Interpretation gut möglich. Wir werden im nächsten Schritt trotzdem
-# beispielhaft die mit der Varimax-Methode rotierten Faktorladungen ansehen.
-#
-# Bevor wir das tun, werden wir noch die verschiedenen initialen Schätzungen der Kommunalitäten in der (iterierten) PAF-Methode vergleichen.
+# Bevor wir zur Faktorrotation und -interpretation kommen, werden wir noch die verschiedenen initialen Schätzungen der Kommunalitäten in der (iterierten) PAF-Methode vergleichen.
 # Interessant könnte dabei sein, ob die Wahl der initialen Schätzung einen Einfluss auf die finalen Ladungen hat.
 
-# In[23]:
+# In[ ]:
 
 
 paf_comparison_methods = [
@@ -468,7 +467,7 @@ for init_comm in initial_communality_estimates:
 # Wir können sehen, dass nur geringe Unterschiede zwischen den unterschiedlichen initialen Schätzungen
 # in den Ladungen feststellbar sind. Nur in der nicht-iterierten Variante der PAF-Methode können wir einige
 # Unterschiede, vor allem im zweiten Faktor feststellen. Beispielsweise hat der zweite Faktor hier ein unterschiedliches
-# Vorzeichen, jedoch nur wenn Einsen als Kommunalitätsschätzung benutzt wurden. In diesem
+# Vorzeichen, jedoch nur, wenn Einsen als Kommunalitätsschätzung benutzt wurden. In diesem
 # Fall ist das Ergebnis identisch zur Hauptkomponentenmethode.
 #
 # Wir stellen fest, dass die iterierte Variante jedoch eine unterschiedliche Anzahl an Iterationen benötigt, bis
@@ -479,7 +478,7 @@ for init_comm in initial_communality_estimates:
 # # Faktoranalyse Schritt 4: Faktorrotation und -interpretation
 # Jetzt rotieren wir die Ladungen mit der Varimax-Methode und versuchen, die Faktoren zu interpretieren.
 
-# In[24]:
+# In[ ]:
 
 
 methods = [
@@ -506,7 +505,7 @@ plt.tight_layout()
 # welche eine multivariate lineare Regression benutzt, um die Faktorwerte
 # zu schätzen.
 
-# In[25]:
+# In[ ]:
 
 
 scores = FactorAnalysis(n_factors=3).fit_transform(X_without_age)
@@ -514,7 +513,7 @@ scores = pd.DataFrame(scores, columns=["Größe", "Standort", "Wohlstand"])
 scores.head()
 
 
-# In[26]:
+# In[ ]:
 
 
 scores.std(axis=0)
@@ -526,8 +525,8 @@ scores.std(axis=0)
 # Benutzt man jedoch die Hauptkomponentenmethode, so weisen die Faktorwerte eine
 # Standardabweichung von Eins auf.
 
-# In[27]:
+# In[ ]:
 
 
-scores = FactorAnalysis(method="pc", n_factors=3).fit_transform(X)
+scores = FactorAnalysis(method="pc", n_factors=3).fit_transform(X_without_age)
 scores.std(axis=0)
