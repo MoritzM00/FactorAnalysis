@@ -1,5 +1,8 @@
 # Factor Analysis
 
+![Tests](https://github.com/MoritzM00/FactorAnalysis/actions/workflows/tests.yml/badge.svg)
+![License](https://img.shields.io/github/license/MoritzM00/FactorAnalysis?color=blue)
+
 ## Overview
 
 This project implements factor analysis using the principal components (PC) and
@@ -47,7 +50,7 @@ scores = fa.fit_transform(data)
 ```
 
 
-## Installing requirements
+## Dependencies
 
 The required packages for the actual factor analysis class are
 - scikit-learn
@@ -76,3 +79,21 @@ If you want to run tests and commit to the project, then additionally run
 pip install -r requirements-dev.txt
 pre-commit install
 ```
+
+## Contributing
+
+This project uses [Poetry](https://python-poetry.org/ "python-poetry.org") as its dependency manager.
+If you do not already have it, install Poetry.
+For instructions, follow this link:
+
+https://github.com/python-poetry/poetry/blob/master/README.md#installation
+
+
+Once you have Poetry installed, clone the repository and execute:
+
+```bash
+poetry config virtualenvs.in-project true
+poetry install
+```
+
+This creates a virtual environment and installs the required packages.
