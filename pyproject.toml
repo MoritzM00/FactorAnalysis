@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "FactorAnalysis"
+version = "0.1.0"
+description = "Exploratory Factor Analysis in Python"
+authors = ["Moritz Mistol <moritz.mistol@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.11"
+numpy = "*"
+scikit-learn = "1.0.2"
+scipy = "1.7.3"
+pandas = "*"
+factor-analyzer = "*"
+seaborn = "*"
+matplotlib = "*"
+
+[tool.poetry.dev-dependencies]
+black = "*"
+isort = "*"
+pre-commit ="*"
+pytest = "*"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
