@@ -1,19 +1,17 @@
 [tool.poetry]
-name = "FactorAnalysis"
+name = "Factor-Analysis-Wrapper"
 version = "0.1.0"
 description = "Exploratory Factor Analysis in Python"
 authors = ["Moritz Mistol <moritz.mistol@gmail.com>"]
 license = "GNU GPL v2"
 readme = "README.md"
-homepage = "https://github.com/johnfraney/flake8-markdown"
-repository = "https://github.com/johnfraney/flake8-markdown"
+homepage = "https://github.com/MoritzM00/FactorAnalysis"
+repository = "https://github.com/MoritzM00/FactorAnalysis"
 classifiers=['Intended Audience :: Science/Research',
            'Intended Audience :: Developers',
            'Programming Language :: Python',
            'Topic :: Scientific/Engineering',
            'Operating System :: Microsoft :: Windows',
-           'Operating System :: POSIX',
-           'Operating System :: Unix',
            'Operating System :: MacOS',
            'Programming Language :: Python :: 3.9',
            ]
