@@ -42,7 +42,9 @@ def test_fit_using_corr_mtx(get_app_ex_loadings):
 @pytest.fixture(scope="session")
 def get_app_ex_data():
     # Table 7.3 on p.419, Backhaus Multivariate Analysis
-    pth = os.path.join(".", "tests", "data", "application_example_backhaus_2021.csv")
+    pth = os.path.join(
+        os.getcwd(), "tests", "data", "application_example_backhaus_2021.csv"
+    )
     data = pd.read_csv(pth, sep=";", header=None)
     return data
 
